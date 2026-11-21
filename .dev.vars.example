@@ -1,0 +1,14 @@
+# Cloudflare Workers local development secrets (.dev.vars - NEVER commit real secrets)
+# Copy this file to .dev.vars when testing with `wrangler dev`.
+
+GITHUB_APP_ID="123456"
+GITHUB_APP_CLIENT_ID="Iv1.placeholder_client_id"
+GITHUB_APP_CLIENT_SECRET="placeholder_client_secret"
+GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\nPLACEHOLDER\n-----END RSA PRIVATE KEY-----"
+GITHUB_APP_INSTALLATION_ID="98765432"
+GITHUB_DATA_OWNER="your-github-username"
+GITHUB_DATA_REPO="mooncode-study-data"
+GITHUB_DATA_BRANCH="main"
+ALLOWED_GITHUB_USER_ID="12345678"
+SESSION_SECRET="replace-with-at-least-32-random-characters"
+APP_ORIGIN="https://your-worker-subdomain.workers.dev"

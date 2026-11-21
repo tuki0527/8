@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mooncode.local/schemas/snapshot-manifest.schema.json",
+  "title": "MoonCode SnapshotManifest",
+  "type": "object",
+  "required": [
+    "format",
+    "schemaVersion",
+    "datasetId",
+    "revisionId",
+    "generation",
+    "syncEpoch",
+    "createdAt",
+    "deviceId",
+    "parentRevisionId",
+    "stats",
+    "indexes",
+    "archives",
+    "appliedOperationIds"
+  ],
+  "properties": {
+    "format": { "const": "mooncode.manifest" },
+    "schemaVersion": { "const": 1 },
+    "datasetId": { "type": "string" },
+    "revisionId": { "type": "string" },
+    "generation": { "type": "integer", "minimum": 1 },
+    "syncEpoch": { "type": "integer", "minimum": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "deviceId": { "type": "string" },
+    "parentRevisionId": { "type": ["string", "null"] },
+    "stats": {
+      "type": "object",
+      "required": [
+        "questionSetCount",
+        "testRunCount",
+        "answerCount",
+        "evaluationCount",
+        "slideVariantCount",
+        "tombstoneCount"
+      ]
+    },
+    "indexes": { "type": "array" },
+    "archives": { "type": "array" },
+    "appliedOperationIds": { "type": "array", "items": { "type": "string" } }
+  }
+}

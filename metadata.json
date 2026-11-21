@@ -1,0 +1,6 @@
+{
+  "name": "MoonCode 月海程式學習室",
+  "description": "本機離線優先、支援雙版本回復與 ChatGPT Plus 手動 JSON 往返的 C# OOP 與 MVC 互動式程式學習室。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

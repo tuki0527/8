@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mooncode.local/schemas/ai-response-envelope.schema.json",
+  "title": "MoonCode AiResponseEnvelope",
+  "type": "object",
+  "required": ["format", "schemaVersion", "task", "requestId", "baseDatasetEpoch", "payload"],
+  "properties": {
+    "format": { "const": "mooncode.ai_response" },
+    "schemaVersion": { "const": 1 },
+    "task": { "enum": ["generate_question_set", "evaluate_short_answers", "rewrite_slide"] },
+    "requestId": { "type": "string", "minLength": 1 },
+    "baseDatasetEpoch": { "type": "integer", "minimum": 1 },
+    "payload": { "type": "object" }
+  }
+}

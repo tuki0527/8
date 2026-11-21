@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mooncode.local/schemas/study-bundle.schema.json",
+  "title": "MoonCode StudyBundle",
+  "type": "object",
+  "required": [
+    "format",
+    "schemaVersion",
+    "exportedAt",
+    "datasetId",
+    "syncEpoch",
+    "generation",
+    "settings",
+    "questionSets",
+    "testRuns",
+    "answers",
+    "evaluations",
+    "slideVariants",
+    "tombstones",
+    "issueReports",
+    "integritySha256"
+  ],
+  "properties": {
+    "format": { "const": "mooncode.study_bundle" },
+    "schemaVersion": { "const": 1 },
+    "integritySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

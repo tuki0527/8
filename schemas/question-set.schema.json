@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mooncode.local/schemas/question-set.schema.json",
+  "title": "MoonCode QuestionSet",
+  "type": "object",
+  "required": [
+    "format",
+    "schemaVersion",
+    "setId",
+    "setVersion",
+    "chapterId",
+    "contentVersion",
+    "title",
+    "createdAt",
+    "source",
+    "conceptIds",
+    "difficulty",
+    "questions"
+  ],
+  "properties": {
+    "format": { "const": "mooncode.question_set" },
+    "schemaVersion": { "const": 1 },
+    "setId": { "type": "string", "minLength": 1 },
+    "localId": { "type": "string" },
+    "setVersion": { "type": "integer", "minimum": 1 },
+    "chapterId": { "type": "string", "minLength": 1 },
+    "contentVersion": { "type": "integer", "minimum": 1 },
+    "title": { "type": "string", "minLength": 2, "maxLength": 200 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "source": { "enum": ["seed", "ai_import"] },
+    "conceptIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "difficulty": { "enum": ["beginner", "intermediate", "advanced"] },
+    "questions": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "description": "Must contain exactly 7 single_choice and 3 short_answer questions."
+    }
+  }
+}

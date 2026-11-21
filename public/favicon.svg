@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="MoonCode Favicon">
+  <rect width="32" height="32" rx="8" fill="#0b1320" />
+  <path d="M10 8.5c-2.2 0-3 1.2-3 3.2v2.3c0 1.2-.8 2-2 2 1.2 0 2 .8 2 2v2.3c0 2 .8 3.2 3 3.2" fill="none" stroke="#78b7d8" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M18 9a7 7 0 1 0 5.5 11.2A5.7 5.7 0 0 1 18 9Z" fill="#f2d89f" />
+  <path d="M22 8.5c2.2 0 3 1.2 3 3.2v2.3c0 1.2.8 2 2 2-1.2 0-2 .8-2 2v2.3c0 2-.8 3.2-3 3.2" fill="none" stroke="#78b7d8" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
