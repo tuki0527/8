@@ -156,3 +156,30 @@ npx wrangler secret put APP_ORIGIN
 - **Android / 桌面 Chrome／Edge**：開啟網站後可於網址列或「設定」頁點擊「安裝 MoonCode 至主畫面」。
 - **iOS Safari**：點擊 Safari 下方「分享」按鈕 -> 「加入主畫面」即可全螢幕離線使用；Service Worker 僅快取靜態資源與教材，不會快取 `/api/*`。
 - **資料格式與復原詳見**：[DATA_FORMAT.md](./DATA_FORMAT.md) 與 [RECOVERY.md](./RECOVERY.md)。
+
+---
+
+## 六、系統文件下載與持續維護流程
+
+網站側欄／手機漢堡選單內的 **「系統文件下載」**（`/docs`）提供兩份實機截圖與原始碼同步產製的繁體中文 PDF：
+- `public/system-docs/system-specification.pdf`（**系統規格書**）
+- `public/system-docs/user-guide.pdf`（**使用操作手冊**）
+
+若日後新增功能、調整導覽／按鈕或修改核心邏輯，請依根目錄 [AGENTS.md](./AGENTS.md) 規範於同一輪更新文件並執行：
+
+```bash
+# 1. 建置最新靜態網站（供隔離實機截圖）
+npm run build
+
+# 2. 在隔離瀏覽器環境自動重新擷取實機截圖至 docs/screenshots/
+npm run docs:capture
+
+# 3. 產製繁體中文圖文 PDF、manifest.json 與 src/generated/docsExpectation.ts
+npm run docs:build
+
+# 4. 重建網站以寫入最新預期指紋並通過一致性檢查
+npm run build && npm run docs:verify
+```
+
+> `npm run preflight` 已整合 `docs:verify`，若核心程式有修改但系統文件／PDF 尚未重新同步產製，預檢將主動擋下並提示更新。
+

@@ -6,6 +6,7 @@ import {
   Bot,
   ChevronRight,
   Database,
+  FileText,
   FileWarning,
   Home,
   Layers,
@@ -100,6 +101,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       icon: Bot,
     },
     { to: '/storage', label: '儲存與版本', icon: Database },
+    { to: '/docs', label: '系統文件下載', icon: FileText },
     { to: '/settings', label: '設定', icon: Settings },
   ];
 

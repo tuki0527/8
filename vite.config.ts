@@ -46,11 +46,20 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-          navigateFallbackDenylist: [/^\/api\//],
+          navigateFallbackDenylist: [/^\/api\//, /^\/system-docs\//i],
           runtimeCaching: [
             {
               urlPattern: /^\/api\/.*/i,
               handler: 'NetworkOnly',
+            },
+            {
+              urlPattern: /^\/system-docs\/.*/i,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'mooncode-system-docs',
+                networkTimeoutSeconds: 4,
+                cacheableResponse: { statuses: [200] },
+              },
             },
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

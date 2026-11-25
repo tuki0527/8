@@ -15,9 +15,12 @@
     "test": "vitest run",
     "test:e2e": "vitest run tests/e2e-flows.test.ts",
     "benchmark": "tsx scripts/benchmark.ts",
+    "docs:capture": "node scripts/docs/capture-screenshots.mjs",
+    "docs:build": "node scripts/docs/build-docs.mjs",
+    "docs:verify": "node scripts/docs/verify-docs.mjs",
     "deploy:dry-run": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
-    "preflight": "npm run typecheck && npm run build && npx wrangler deploy --dry-run"
+    "preflight": "npm run typecheck && npm run build && npx wrangler deploy --dry-run && npm run docs:verify"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

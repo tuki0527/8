@@ -16,6 +16,7 @@ import { QuizResultPage } from './features/QuizResultPage.tsx';
 import { QuizRunnerPage } from './features/QuizRunnerPage.tsx';
 import { SettingsPage } from './features/SettingsPage.tsx';
 import { StorageVersionsPage } from './features/StorageVersionsPage.tsx';
+import { SystemDocsPage } from './features/SystemDocsPage.tsx';
 import { WrongBookPage } from './features/WrongBookPage.tsx';
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
               <Route path="/mastery" element={<MasteryPage />} />
               <Route path="/ai" element={<AiWorkbenchPage />} />
               <Route path="/storage" element={<StorageVersionsPage />} />
+              <Route path="/docs" element={<SystemDocsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

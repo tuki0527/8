@@ -1,0 +1,158 @@
+{
+  "format": "mooncode.screenshots_manifest",
+  "schemaVersion": 1,
+  "appVersion": "1.0.0",
+  "capturedAt": "2026-11-24T08:27:03.892Z",
+  "screenshots": [
+    {
+      "id": "01_home",
+      "fileName": "01_home.jpg",
+      "route": "/",
+      "viewport": "1440x900",
+      "stateDescription": "潔淨初始狀態首頁總覽，側欄展開並含「系統文件下載」項目與 9 章課程地圖。",
+      "capturedAt": "2026-11-24T08:26:04.182Z",
+      "byteSize": 144675,
+      "sha256": "9ede6320adcc3815fe0505c1b0ddcbb3903db7392bad3c25b97869ab62257fa4"
+    },
+    {
+      "id": "02_chapter_slides",
+      "fileName": "02_chapter_slides.jpg",
+      "route": "/chapters/ch1",
+      "viewport": "1440x900",
+      "stateDescription": "第 1 章第 1 頁簡報，顯示核心結論鎖定區、生活比喻邊界、C# 程式碼區塊與步驟模擬推演。",
+      "capturedAt": "2026-11-24T08:26:04.888Z",
+      "byteSize": 167626,
+      "sha256": "76152cd694217c1c1c76d50125eef65f098d765793c2f3386b0a90c1c415b489"
+    },
+    {
+      "id": "03_chapter_rewrite_edit",
+      "fileName": "03_chapter_rewrite_edit.jpg",
+      "route": "/chapters/ch1 (editing)",
+      "viewport": "1440x900",
+      "stateDescription": "展開「自訂比喻與版面」受控改寫表單，僅開放比喻、白話補充、詳盡度與版面切換。",
+      "capturedAt": "2026-11-24T08:26:15.381Z",
+      "byteSize": 144302,
+      "sha256": "b424723cf509cb6dfcf51cc446db38524e7cca2995b58ee57e14ecd40c1b6788"
+    },
+    {
+      "id": "04_question_bank",
+      "fileName": "04_question_bank.jpg",
+      "route": "/bank",
+      "viewport": "1440x900",
+      "stateDescription": "題庫與測驗入口，呈現 5 欄篩選條件、擴充新題組按鈕與 9 組內建 7+3 種子題組。",
+      "capturedAt": "2026-11-24T08:26:15.915Z",
+      "byteSize": 151398,
+      "sha256": "6ffb98b4c163d7243e400ec8a4d7eba948c9ec4cfa163118cb49f4353ee99658"
+    },
+    {
+      "id": "05_quiz_mcq",
+      "fileName": "05_quiz_mcq.jpg",
+      "route": "/quiz/:testRunId (Q1)",
+      "viewport": "1440x900",
+      "stateDescription": "逐題作答介面（單選題第 1/10 題），顯示已點選選項、有效作答計時、暫停按鈕與確認作答按鈕。",
+      "capturedAt": "2026-11-24T08:26:21.807Z",
+      "byteSize": 98958,
+      "sha256": "d487cbfc9be030103e316fe0c2087a35dd42dd01800f03c737b175357b9734f9"
+    },
+    {
+      "id": "06_quiz_short_last",
+      "fileName": "06_quiz_short_last.jpg",
+      "route": "/quiz/:testRunId (Q10)",
+      "viewport": "1440x900",
+      "stateDescription": "第 10/10 題理解作答題畫面，已輸入理解作答並呈現「送出最後一題並查看結果」按鈕。",
+      "capturedAt": "2026-11-24T08:26:24.329Z",
+      "byteSize": 89247,
+      "sha256": "8d9187d7336eb0073425c97a73d8c98b521d3a821cba585655a65042ffa3dcc8"
+    },
+    {
+      "id": "07_quiz_result_pending_ai",
+      "fileName": "07_quiz_result_pending_ai.jpg",
+      "route": "/quiz/:testRunId/result",
+      "viewport": "1440x900",
+      "stateDescription": "完成 10 題測驗之結果總覽（隔離測試紀錄），顯示單選 6/7 分數與 3 題「待 AI 判讀（未判讀不算答錯）」提示。",
+      "capturedAt": "2026-11-24T08:26:25.064Z",
+      "byteSize": 128679,
+      "sha256": "6d3d282c7fc6aba44c27a30eb39c588330ebcbc3719e5552ba2ed13114517c72"
+    },
+    {
+      "id": "08_ai_workbench",
+      "fileName": "08_ai_workbench.jpg",
+      "route": "/ai",
+      "viewport": "1440x900",
+      "stateDescription": "AI 互動工作台畫面，呈現 Plus 手動 JSON 往返已啟用與官方自動連線未啟用狀態、任務 B 待評計數及 JSON 匯入驗證區。",
+      "capturedAt": "2026-11-24T08:26:25.576Z",
+      "byteSize": 86915,
+      "sha256": "b49cde2efa6d3972a7c02258eafc5b5647f26e53762d0f574ccbbbaf9cd50897"
+    },
+    {
+      "id": "09_wrong_book_empty",
+      "fileName": "09_wrong_book_empty.jpg",
+      "route": "/wrong-book",
+      "viewport": "1440x900",
+      "stateDescription": "潔淨初始狀態錯題本，尚未有答錯紀錄時誠實顯示無錯題紀錄。",
+      "capturedAt": "2026-11-24T08:26:16.389Z",
+      "byteSize": 64166,
+      "sha256": "3b10c0e006b7fc21dd8ce85416428efb62a457efb388045d287254bf7bc870e1"
+    },
+    {
+      "id": "10_wrong_book_populated",
+      "fileName": "10_wrong_book_populated.jpg",
+      "route": "/wrong-book (with 1 sample wrong MCQ)",
+      "viewport": "1440x900",
+      "stateDescription": "錯題本有錯題紀錄實機畫面（隔離測試資料），顯示當時回答與正解對照、「移出複習清單 (保留統計)」、「重置此筆作答紀錄」與「重練原題組」。",
+      "capturedAt": "2026-11-24T08:26:26.107Z",
+      "byteSize": 88772,
+      "sha256": "1072bc458cd5d5b405fad0b7069d1cfd291dd7e2ad620248d09ba8c06b9e59f3"
+    },
+    {
+      "id": "11_mastery",
+      "fileName": "11_mastery.jpg",
+      "route": "/mastery (after 1 isolated run)",
+      "viewport": "1440x900",
+      "stateDescription": "概念掌握度頁實機畫面（隔離單次測驗資料），已測概念顯示「（暫估）」與速度資料尚不足，未測概念與章節誠實顯示「待測」。",
+      "capturedAt": "2026-11-24T08:26:26.643Z",
+      "byteSize": 137184,
+      "sha256": "5aa74e252debd3182af378589cf9a9de432becd457f7637a54e057fc84477ded"
+    },
+    {
+      "id": "12_storage_versions",
+      "fileName": "12_storage_versions.jpg",
+      "route": "/storage",
+      "viewport": "1440x900",
+      "stateDescription": "本機模式下之儲存與版本管理頁，顯示 Generation／Epoch、StudyBundle 匯出匯入與清理選項。",
+      "capturedAt": "2026-11-24T08:26:16.893Z",
+      "byteSize": 119652,
+      "sha256": "4dfd6a3c0b19c51e42ff9f08040fdc87ede7c24255c79e055fe3a115bf4fdcd5"
+    },
+    {
+      "id": "13_settings",
+      "fileName": "13_settings.jpg",
+      "route": "/settings",
+      "viewport": "1440x900",
+      "stateDescription": "學習室設定與連線管理頁，顯示基本偏好、五時段月海預覽、PWA 安裝說明與 GitHub 本機模式。",
+      "capturedAt": "2026-11-24T08:26:17.419Z",
+      "byteSize": 122891,
+      "sha256": "5e1f8f9068ccacb436c9eace47a6b7913e135732ff6192f42b3ecf92ed08f7de"
+    },
+    {
+      "id": "14_system_docs",
+      "fileName": "14_system_docs.jpg",
+      "route": "/docs",
+      "viewport": "1440x900",
+      "stateDescription": "系統文件下載頁，顯示版本核對狀態、頁數與檔案大小摘要及兩份 PDF 下載按鈕。",
+      "capturedAt": "2026-11-24T08:27:01.892Z",
+      "byteSize": 148548,
+      "sha256": "52ad917f8bf89b83f0ee5fc8a9e49568875215ef4cff51e32c70d08155b7045a"
+    },
+    {
+      "id": "15_mobile_nav_docs",
+      "fileName": "15_mobile_nav_docs.jpg",
+      "route": "/docs (mobile drawer open)",
+      "viewport": "390x844",
+      "stateDescription": "手機窄螢幕開啟漢堡導覽抽屜實機畫面，顯示「系統文件下載」入口並確認無任何橫向溢出。",
+      "capturedAt": "2026-11-24T08:27:03.870Z",
+      "byteSize": 30186,
+      "sha256": "b9d2f3b6ff133c15554c926f9b17043412fc30f276686a861d791f5dfac58328"
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "docsVersion": "1.2.0",
+  "updatedAt": "2026-11-24",
+  "previousReferenceVersion": "1.1.0-e3c5a571",
+  "sourceTrackedFiles": [
+    "package.json",
+    "src/App.tsx",
+    "src/components/AppShell.tsx",
+    "src/components/BrandLogo.tsx",
+    "src/components/CSharpCodeBlock.tsx",
+    "src/components/MoonSeaHero.tsx",
+    "src/domain/aiRoundtrip.ts",
+    "src/domain/hash.ts",
+    "src/domain/mastery.ts",
+    "src/domain/quizEngine.ts",
+    "src/domain/timeTheme.ts",
+    "src/domain/types.ts",
+    "src/features/AiWorkbenchPage.tsx",
+    "src/features/ChapterSlidesPage.tsx",
+    "src/features/HomePage.tsx",
+    "src/features/MasteryPage.tsx",
+    "src/features/QuestionBankPage.tsx",
+    "src/features/QuizResultPage.tsx",
+    "src/features/QuizRunnerPage.tsx",
+    "src/features/SettingsPage.tsx",
+    "src/features/StorageVersionsPage.tsx",
+    "src/features/SystemDocsPage.tsx",
+    "src/features/WrongBookPage.tsx",
+    "src/hooks/usePWAInstall.ts",
+    "src/storage/db.ts",
+    "src/storage/settings.ts",
+    "src/storage/studyStore.ts",
+    "src/sync/sharding.ts",
+    "src/sync/syncEngine.ts",
+    "server/shared/githubSyncHandler.ts",
+    "workers/worker.ts",
+    "wrangler.toml",
+    "vite.config.ts"
+  ],
+  "docSourceFiles": [
+    "docs/docs-config.json",
+    "docs/system-specification.md",
+    "docs/user-guide.md",
+    "docs/CHANGELOG.md",
+    "scripts/docs/build-docs.mjs"
+  ],
+  "routeCoverage": [
+    {
+      "route": "/",
+      "label": "首頁總覽",
+      "specSections": ["產品定位與適用版本", "系統功能模組與導覽架構"],
+      "guideSections": ["開始使用、漢堡導覽與首頁總覽"],
+      "screenshots": ["01_home", "15_mobile_nav_docs"]
+    },
+    {
+      "route": "/chapters/:chapterId",
+      "label": "章節簡報與步驟模擬",
+      "specSections": ["教材結構與簡報安全改寫規則"],
+      "guideSections": ["閱讀章節簡報與步驟模擬", "自訂比喻、版面切換與 AI 改寫保護"],
+      "screenshots": ["02_chapter_slides", "03_chapter_rewrite_edit"]
+    },
+    {
+      "route": "/bank",
+      "label": "題庫與測驗入口",
+      "specSections": ["題組、7+3 作答與評閱規則"],
+      "guideSections": ["篩選題庫與開始 10 題測驗"],
+      "screenshots": ["04_question_bank"]
+    },
+    {
+      "route": "/quiz/:testRunId",
+      "label": "逐題作答與計時",
+      "specSections": ["題組、7+3 作答與評閱規則", "有效作答計時與中斷處理規則"],
+      "guideSections": ["逐題作答、計時暫停與送出鎖定"],
+      "screenshots": ["05_quiz_mcq", "06_quiz_short_last"]
+    },
+    {
+      "route": "/quiz/:testRunId/result",
+      "label": "測驗結果總覽與題目回報",
+      "specSections": ["題組、7+3 作答與評閱規則"],
+      "guideSections": ["查看測驗結果與待 AI 判讀理解題"],
+      "screenshots": ["07_quiz_result_pending_ai"]
+    },
+    {
+      "route": "/wrong-book",
+      "label": "錯題本與精準複習",
+      "specSections": ["錯題紀錄、重練與證據移除規則"],
+      "guideSections": ["錯題本檢視、重練與紀錄清理"],
+      "screenshots": ["09_wrong_book_empty", "10_wrong_book_populated"]
+    },
+    {
+      "route": "/mastery",
+      "label": "概念掌握度與間隔複習",
+      "specSections": ["掌握度指標公式、限制與間隔複習規則"],
+      "guideSections": ["理解概念掌握度數值與間隔複習"],
+      "screenshots": ["11_mastery"]
+    },
+    {
+      "route": "/ai",
+      "label": "AI 互動工作台",
+      "specSections": ["AI 工作台任務與 JSON 驗證規格"],
+      "guideSections": ["使用 AI 工作台執行出題、評閱與改寫"],
+      "screenshots": ["08_ai_workbench"]
+    },
+    {
+      "route": "/storage",
+      "label": "儲存、版本管理與備份還原",
+      "specSections": ["本機保存、備份、跨裝置同步與版本復原"],
+      "guideSections": ["儲存、StudyBundle 備份、同步與回到上一版"],
+      "screenshots": ["12_storage_versions"]
+    },
+    {
+      "route": "/docs",
+      "label": "系統文件下載",
+      "specSections": ["系統文件下載、PDF 產製與版本校驗"],
+      "guideSections": ["下載系統規格書與使用操作手冊 PDF"],
+      "screenshots": ["14_system_docs"]
+    },
+    {
+      "route": "/settings",
+      "label": "學習室設定與連線管理",
+      "specSections": ["本機保存、備份、跨裝置同步與版本復原", "執行邊界與待外部設定清單"],
+      "guideSections": ["設定主題、偏好、手機 PWA 與 GitHub 同步連線"],
+      "screenshots": ["13_settings"]
+    }
+  ],
+  "documents": [
+    {
+      "id": "system-specification",
+      "title": "系統規格書",
+      "subtitle": "產品行為、資料結構、演算法公式與維護基準 / C# OOP & MVC",
+      "description": "完整記錄 MoonCode 系統邊界、9 章簡報改寫規則、7+3 測驗與有效計時、掌握度公式、AI 手動 JSON 驗證與 GitHub 分片同步／版本復原規範。",
+      "sourceMarkdown": "docs/system-specification.md",
+      "outputPdf": "public/system-docs/system-specification.pdf",
+      "fileName": "system-specification.pdf",
+      "downloadFileName": "MoonCode-系統規格書-v1.2.0.pdf"
+    },
+    {
+      "id": "user-guide",
+      "title": "使用操作手冊",
+      "subtitle": "手機與電腦圖文操作步驟指南 / 依實際介面按鈕撰寫",
+      "description": "面向手機與電腦自用者的圖文步驟指南，依實際介面與真實按鈕名稱介紹章節學習、測驗操作、ChatGPT Plus 往返、錯題複習與備份還原。",
+      "sourceMarkdown": "docs/user-guide.md",
+      "outputPdf": "public/system-docs/user-guide.pdf",
+      "fileName": "user-guide.pdf",
+      "downloadFileName": "MoonCode-使用操作手冊-v1.2.0.pdf"
+    }
+  ]
+}

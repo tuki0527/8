@@ -1,0 +1,34 @@
+{
+  "format": "mooncode.system_docs_manifest",
+  "schemaVersion": 1,
+  "appVersion": "1.0.0",
+  "docsVersion": "1.2.0",
+  "updatedAt": "2026-11-24",
+  "status": "published",
+  "sourceFingerprint": "7a60c2eb392c",
+  "docsFingerprint": "c842b1886fee",
+  "documents": [
+    {
+      "id": "system-specification",
+      "title": "系統規格書",
+      "subtitle": "產品行為、資料結構、演算法公式與維護基準 / C# OOP & MVC",
+      "description": "完整記錄 MoonCode 系統邊界、9 章簡報改寫規則、7+3 測驗與有效計時、掌握度公式、AI 手動 JSON 驗證與 GitHub 分片同步／版本復原規範。",
+      "fileName": "system-specification.pdf",
+      "downloadFileName": "MoonCode-系統規格書-v1.2.0.pdf",
+      "pageCount": 14,
+      "byteSize": 5568728,
+      "sha256": "44aba5811acb0211eb368585c83c0341ad4f26104b0d55a551f538e337f157ba"
+    },
+    {
+      "id": "user-guide",
+      "title": "使用操作手冊",
+      "subtitle": "手機與電腦圖文操作步驟指南 / 依實際介面按鈕撰寫",
+      "description": "面向手機與電腦自用者的圖文步驟指南，依實際介面與真實按鈕名稱介紹章節學習、測驗操作、ChatGPT Plus 往返、錯題複習與備份還原。",
+      "fileName": "user-guide.pdf",
+      "downloadFileName": "MoonCode-使用操作手冊-v1.2.0.pdf",
+      "pageCount": 13,
+      "byteSize": 4861911,
+      "sha256": "be603ac56b059e7232a15fa5060e953037b2a3b2394a6c432baf6d116fb7cd25"
+    }
+  ]
+}
