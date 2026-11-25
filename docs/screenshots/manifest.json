@@ -2,7 +2,7 @@
   "format": "mooncode.screenshots_manifest",
   "schemaVersion": 1,
   "appVersion": "1.0.0",
-  "capturedAt": "2026-11-24T08:27:03.892Z",
+  "capturedAt": "2026-11-25T07:15:36.599Z",
   "screenshots": [
     {
       "id": "01_home",
@@ -10,9 +10,9 @@
       "route": "/",
       "viewport": "1440x900",
       "stateDescription": "潔淨初始狀態首頁總覽，側欄展開並含「系統文件下載」項目與 9 章課程地圖。",
-      "capturedAt": "2026-11-24T08:26:04.182Z",
-      "byteSize": 144675,
-      "sha256": "9ede6320adcc3815fe0505c1b0ddcbb3903db7392bad3c25b97869ab62257fa4"
+      "capturedAt": "2026-11-25T07:10:27.654Z",
+      "byteSize": 144639,
+      "sha256": "f60801b8481667d6f74bc4f4439e19e9985bff3eab1a63a9d5438bfd8d656036"
     },
     {
       "id": "02_chapter_slides",
@@ -20,9 +20,9 @@
       "route": "/chapters/ch1",
       "viewport": "1440x900",
       "stateDescription": "第 1 章第 1 頁簡報，顯示核心結論鎖定區、生活比喻邊界、C# 程式碼區塊與步驟模擬推演。",
-      "capturedAt": "2026-11-24T08:26:04.888Z",
-      "byteSize": 167626,
-      "sha256": "76152cd694217c1c1c76d50125eef65f098d765793c2f3386b0a90c1c415b489"
+      "capturedAt": "2026-11-25T07:10:29.822Z",
+      "byteSize": 168096,
+      "sha256": "bee2e4c97bcb6cfa3af59c0d574fdfead35985f3c7aff545f6b30d53835a3be0"
     },
     {
       "id": "03_chapter_rewrite_edit",
@@ -30,9 +30,9 @@
       "route": "/chapters/ch1 (editing)",
       "viewport": "1440x900",
       "stateDescription": "展開「自訂比喻與版面」受控改寫表單，僅開放比喻、白話補充、詳盡度與版面切換。",
-      "capturedAt": "2026-11-24T08:26:15.381Z",
-      "byteSize": 144302,
-      "sha256": "b424723cf509cb6dfcf51cc446db38524e7cca2995b58ee57e14ecd40c1b6788"
+      "capturedAt": "2026-11-25T07:10:40.294Z",
+      "byteSize": 144923,
+      "sha256": "c0b62c730b4a68186cd6cd3714d3d473b6abb577a13b0bb5fcd5c004e724f929"
     },
     {
       "id": "04_question_bank",
@@ -40,9 +40,9 @@
       "route": "/bank",
       "viewport": "1440x900",
       "stateDescription": "題庫與測驗入口，呈現 5 欄篩選條件、擴充新題組按鈕與 9 組內建 7+3 種子題組。",
-      "capturedAt": "2026-11-24T08:26:15.915Z",
-      "byteSize": 151398,
-      "sha256": "6ffb98b4c163d7243e400ec8a4d7eba948c9ec4cfa163118cb49f4353ee99658"
+      "capturedAt": "2026-11-25T07:10:40.875Z",
+      "byteSize": 151357,
+      "sha256": "5fb6456cc5c9486c50a092bcc560f94ff014530c3492aca44d6a17e1c11b983b"
     },
     {
       "id": "05_quiz_mcq",
@@ -50,9 +50,9 @@
       "route": "/quiz/:testRunId (Q1)",
       "viewport": "1440x900",
       "stateDescription": "逐題作答介面（單選題第 1/10 題），顯示已點選選項、有效作答計時、暫停按鈕與確認作答按鈕。",
-      "capturedAt": "2026-11-24T08:26:21.807Z",
-      "byteSize": 98958,
-      "sha256": "d487cbfc9be030103e316fe0c2087a35dd42dd01800f03c737b175357b9734f9"
+      "capturedAt": "2026-11-25T07:10:47.038Z",
+      "byteSize": 99183,
+      "sha256": "ef87d2dc0f785193f9c0bcf0be8312b070d3364adc7f44a2d2dd7d0d24823de4"
     },
     {
       "id": "06_quiz_short_last",
@@ -60,9 +60,9 @@
       "route": "/quiz/:testRunId (Q10)",
       "viewport": "1440x900",
       "stateDescription": "第 10/10 題理解作答題畫面，已輸入理解作答並呈現「送出最後一題並查看結果」按鈕。",
-      "capturedAt": "2026-11-24T08:26:24.329Z",
-      "byteSize": 89247,
-      "sha256": "8d9187d7336eb0073425c97a73d8c98b521d3a821cba585655a65042ffa3dcc8"
+      "capturedAt": "2026-11-25T07:10:49.550Z",
+      "byteSize": 88977,
+      "sha256": "c4480edadf6ead0e04d20fffb42f03b0a9fae74dbe8a74fa97f59d078f4dd401"
     },
     {
       "id": "07_quiz_result_pending_ai",
@@ -70,19 +70,19 @@
       "route": "/quiz/:testRunId/result",
       "viewport": "1440x900",
       "stateDescription": "完成 10 題測驗之結果總覽（隔離測試紀錄），顯示單選 6/7 分數與 3 題「待 AI 判讀（未判讀不算答錯）」提示。",
-      "capturedAt": "2026-11-24T08:26:25.064Z",
-      "byteSize": 128679,
-      "sha256": "6d3d282c7fc6aba44c27a30eb39c588330ebcbc3719e5552ba2ed13114517c72"
+      "capturedAt": "2026-11-25T07:10:50.325Z",
+      "byteSize": 127993,
+      "sha256": "1c26a6148d0696a49d830a8e917474112c8bc4f0f98e359fe844e1372479442e"
     },
     {
       "id": "08_ai_workbench",
       "fileName": "08_ai_workbench.jpg",
       "route": "/ai",
       "viewport": "1440x900",
-      "stateDescription": "AI 互動工作台畫面，呈現 Plus 手動 JSON 往返已啟用與官方自動連線未啟用狀態、任務 B 待評計數及 JSON 匯入驗證區。",
-      "capturedAt": "2026-11-24T08:26:25.576Z",
-      "byteSize": 86915,
-      "sha256": "b49cde2efa6d3972a7c02258eafc5b5647f26e53762d0f574ccbbbaf9cd50897"
+      "stateDescription": "AI 互動工作台實機畫面，呈現 5 步驟 TXT→JSON 導引、任務 B 已產生提示詞與「下載提示詞（.txt）」主按鈕、.json 檔案匯入區與本機 Request ID 紀錄。",
+      "capturedAt": "2026-11-25T07:13:04.411Z",
+      "byteSize": 168176,
+      "sha256": "29194dabf1b048e2428ef432607ceb73b577816259b4e0d2a2d46d0dff804a22"
     },
     {
       "id": "09_wrong_book_empty",
@@ -90,9 +90,9 @@
       "route": "/wrong-book",
       "viewport": "1440x900",
       "stateDescription": "潔淨初始狀態錯題本，尚未有答錯紀錄時誠實顯示無錯題紀錄。",
-      "capturedAt": "2026-11-24T08:26:16.389Z",
-      "byteSize": 64166,
-      "sha256": "3b10c0e006b7fc21dd8ce85416428efb62a457efb388045d287254bf7bc870e1"
+      "capturedAt": "2026-11-25T07:10:41.357Z",
+      "byteSize": 65110,
+      "sha256": "fa8ba558a47cd5d4d4ccdc55730179d0d33c5939afb25310cf0bcafd85f82166"
     },
     {
       "id": "10_wrong_book_populated",
@@ -100,9 +100,9 @@
       "route": "/wrong-book (with 1 sample wrong MCQ)",
       "viewport": "1440x900",
       "stateDescription": "錯題本有錯題紀錄實機畫面（隔離測試資料），顯示當時回答與正解對照、「移出複習清單 (保留統計)」、「重置此筆作答紀錄」與「重練原題組」。",
-      "capturedAt": "2026-11-24T08:26:26.107Z",
-      "byteSize": 88772,
-      "sha256": "1072bc458cd5d5b405fad0b7069d1cfd291dd7e2ad620248d09ba8c06b9e59f3"
+      "capturedAt": "2026-11-25T07:11:01.461Z",
+      "byteSize": 88920,
+      "sha256": "3f0f954e3a47c75d79405c1b39c2efeda12a3e64fde28259c22cd9b6051f398c"
     },
     {
       "id": "11_mastery",
@@ -110,9 +110,9 @@
       "route": "/mastery (after 1 isolated run)",
       "viewport": "1440x900",
       "stateDescription": "概念掌握度頁實機畫面（隔離單次測驗資料），已測概念顯示「（暫估）」與速度資料尚不足，未測概念與章節誠實顯示「待測」。",
-      "capturedAt": "2026-11-24T08:26:26.643Z",
-      "byteSize": 137184,
-      "sha256": "5aa74e252debd3182af378589cf9a9de432becd457f7637a54e057fc84477ded"
+      "capturedAt": "2026-11-25T07:11:02.042Z",
+      "byteSize": 136599,
+      "sha256": "d7013e37939836d32fa0e32329eb7b1d47e2e40c79e27be214ed65b4ac04da10"
     },
     {
       "id": "12_storage_versions",
@@ -120,9 +120,9 @@
       "route": "/storage",
       "viewport": "1440x900",
       "stateDescription": "本機模式下之儲存與版本管理頁，顯示 Generation／Epoch、StudyBundle 匯出匯入與清理選項。",
-      "capturedAt": "2026-11-24T08:26:16.893Z",
-      "byteSize": 119652,
-      "sha256": "4dfd6a3c0b19c51e42ff9f08040fdc87ede7c24255c79e055fe3a115bf4fdcd5"
+      "capturedAt": "2026-11-25T07:10:41.849Z",
+      "byteSize": 121954,
+      "sha256": "b8fbbb434eec363d5371e2d88875d54b601ace9d416c5f18eac86a0de8877122"
     },
     {
       "id": "13_settings",
@@ -130,9 +130,9 @@
       "route": "/settings",
       "viewport": "1440x900",
       "stateDescription": "學習室設定與連線管理頁，顯示基本偏好、五時段月海預覽、PWA 安裝說明與 GitHub 本機模式。",
-      "capturedAt": "2026-11-24T08:26:17.419Z",
-      "byteSize": 122891,
-      "sha256": "5e1f8f9068ccacb436c9eace47a6b7913e135732ff6192f42b3ecf92ed08f7de"
+      "capturedAt": "2026-11-25T07:10:42.367Z",
+      "byteSize": 123861,
+      "sha256": "1691f95b0184e798cff8cd7834d489c31a3ee06935f57b12bf086cd0b7dfc76e"
     },
     {
       "id": "14_system_docs",
@@ -140,9 +140,9 @@
       "route": "/docs",
       "viewport": "1440x900",
       "stateDescription": "系統文件下載頁，顯示版本核對狀態、頁數與檔案大小摘要及兩份 PDF 下載按鈕。",
-      "capturedAt": "2026-11-24T08:27:01.892Z",
-      "byteSize": 148548,
-      "sha256": "52ad917f8bf89b83f0ee5fc8a9e49568875215ef4cff51e32c70d08155b7045a"
+      "capturedAt": "2026-11-25T07:15:34.660Z",
+      "byteSize": 147903,
+      "sha256": "b0fde2f27f0977b3cff7fed017f1b11794949967310f6ea569deffbfce0a5341"
     },
     {
       "id": "15_mobile_nav_docs",
@@ -150,9 +150,29 @@
       "route": "/docs (mobile drawer open)",
       "viewport": "390x844",
       "stateDescription": "手機窄螢幕開啟漢堡導覽抽屜實機畫面，顯示「系統文件下載」入口並確認無任何橫向溢出。",
-      "capturedAt": "2026-11-24T08:27:03.870Z",
-      "byteSize": 30186,
-      "sha256": "b9d2f3b6ff133c15554c926f9b17043412fc30f276686a861d791f5dfac58328"
+      "capturedAt": "2026-11-25T07:15:36.575Z",
+      "byteSize": 30299,
+      "sha256": "373c40683b9d9f804c794cd1f9cbe260bc6ab10dd1fc811fae5eb912a87d28be"
+    },
+    {
+      "id": "16_save_confirm_dialog",
+      "fileName": "16_save_confirm_dialog.jpg",
+      "route": "/ (save confirmation dialog)",
+      "viewport": "1440x900",
+      "stateDescription": "點擊頂端「儲存」開啟之確認儲存對話框，顯示本機模式範圍說明與「取消」／「確認儲存」按鈕。",
+      "capturedAt": "2026-11-25T07:10:28.365Z",
+      "byteSize": 57991,
+      "sha256": "3ed8efa1d622338aaba39dce46cacf1d2fc6c01e1ffc2991df71a578512c847e"
+    },
+    {
+      "id": "17_save_result_banner",
+      "fileName": "17_save_result_banner.jpg",
+      "route": "/ (save result notification)",
+      "viewport": "1440x900",
+      "stateDescription": "完成手動儲存確認後顯示之結果通知橫幅（「已儲存至本機」），呈現實際完成時間與關閉按鈕。",
+      "capturedAt": "2026-11-25T07:10:29.089Z",
+      "byteSize": 150409,
+      "sha256": "4f61ccea2725180edf5663cefa34ce335168551ddf85b25bc05aa694b28ed389"
     }
   ]
 }

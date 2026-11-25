@@ -4,6 +4,25 @@
 
 ---
 
+## v1.3.0（2026-11-25）
+
+### 對應程式基準與功能更新
+- **頂端「儲存」確認與真實結果回饋**（`src/components/SaveConfirmModal.tsx`、`src/components/AppShell.tsx`、`src/context/StudyContext.tsx`、`src/storage/studyStore.ts`）：
+  - 點擊頂端 **「儲存」** 先開啟 **「確認儲存」** 對話框，依目前真實狀態（「本機模式」、「已完成授權並可同步雲端」、「離線或連線暫不可用」）說明實際影響範圍；**「取消」** 只中止本次手動儲存且不呼叫 `handlePrimarySave`。
+  - **「確認儲存」** 鎖定重複點擊並顯示「儲存中…」，於完成本機 IndexedDB 回讀確認（更新 `lastSavedAt`）及有需要時的雲端同步後，於頁面顯示具無障礙朗讀屬性的結果橫幅，明確區分「已儲存至本機」、「已儲存至本機並完成同步」、「已儲存至本機，目前尚未同步（含原因與重試）」與「儲存失敗」，同時保留測驗逐題等背景自動保存。
+- **AI 工作台改以 `.txt` 提示詞檔案下載與 `.json` 附件匯入為主流程**（`src/features/AiWorkbenchPage.tsx`、`src/domain/aiRoundtrip.ts`）：
+  - 明確區分 **「送給 ChatGPT：提示詞 TXT」** 與 **「從 ChatGPT 帶回網站：回覆 JSON」** 五步驟流程，並提供主按鈕 **「下載提示詞（.txt）」** 輸出純 UTF-8 純文字檔（未產生有效請求時維持停用）。
+  - 任務 A、B、C 提示詞均要求 ChatGPT 優先回傳可下載之純 UTF-8 `.json` 檔案附件；重覆下載同一請求不會建立新 `requestId`，唯主動點擊 **「重新產生（建立新 Request ID）」** 時才新增請求，並維持各 `requestId` 狀態（`已套用`／`待回覆`）與重複匯入去重彼此獨立。
+
+### 截圖與圖資更新紀錄
+- 新增實機截圖 `16_save_confirm_dialog`（「確認儲存」對話框）與 `17_save_result_banner`（完成儲存通知橫幅），並全面重新擷取新版 `08_ai_workbench`、`12_storage_versions`、`14_system_docs`、`15_mobile_nav_docs` 等畫面；完整清單與 SHA-256 記錄於 `docs/screenshots/manifest.json`。
+
+### 驗證範圍
+- [x] 本機儲存確認對話框、取消／確認／重複鎖定、模擬連線與同步失敗區分、AI 三任務 `.txt` 下載內容與不重複建立 `requestId`、`.json` 匯入去重與獨立狀態均已完成單元測試、隔離瀏覽器實機操作與文件核對。
+- [ ] 真實外部 ChatGPT Plus 網頁對話產檔與已授權 GitHub App 線上環境推送仍依賴外部憑證／帳號環境，未在無憑證環境宣稱已聯網成功。
+
+---
+
 ## v1.2.0（2026-11-24）
 
 ### 對應程式基準

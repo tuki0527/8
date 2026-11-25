@@ -1,16 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
+  AlertCircle,
+  AlertTriangle,
   BarChart3,
   BookOpen,
   Bot,
+  CheckCircle2,
   ChevronRight,
   Database,
   FileText,
   FileWarning,
   Home,
   Layers,
+  Loader2,
   Menu,
+  RefreshCw,
   Save,
   Settings,
   WifiOff,
@@ -19,6 +24,7 @@ import {
 import { CANONICAL_CHAPTERS } from '../data/curriculum/index.ts';
 import { useStudy } from '../context/StudyContext.tsx';
 import { BrandLogo } from './BrandLogo.tsx';
+import { SaveConfirmModal } from './SaveConfirmModal.tsx';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -30,6 +36,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     updateSettings,
     saveStatus,
     saveStatusMessage,
+    isSaving,
+    lastSavedAt,
+    saveScopeSummary,
+    saveFeedback,
+    clearSaveFeedback,
     handlePrimarySave,
     isOnline,
     pendingAiCount,
@@ -38,9 +49,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   // Desktop uses settings.sidebarOpen; Mobile drawer starts closed
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const updateFnRef = useRef<((reloadPage?: boolean) => Promise<void>) | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const saveBtnRef = useRef<HTMLButtonElement | null>(null);
 
   // Register PWA Service Worker with explicit prompt on update (Spec 18.8)
   useEffect(() => {
@@ -211,33 +224,122 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           {/* Right: Quiet save status + Primary Save button */}
           <div className="flex shrink-0 items-center gap-3">
             <span
-              className="hidden sm:inline-block max-w-[260px] truncate text-xs"
+              className="hidden sm:inline-block max-w-[280px] truncate text-xs"
               style={{
                 color:
                   saveStatus === 'sync_failed' || saveStatus === 'conflict_quarantine'
                     ? '#f5b482'
                     : 'var(--mc-text-muted)',
               }}
-              title={saveStatusMessage}
+              title={
+                lastSavedAt
+                  ? `${saveStatusMessage} · 最近儲存 ${new Date(lastSavedAt).toLocaleTimeString('zh-TW')}`
+                  : saveStatusMessage
+              }
             >
               {saveStatusMessage}
+              {lastSavedAt && !isSaving ? ` · ${new Date(lastSavedAt).toLocaleTimeString('zh-TW')}` : ''}
             </span>
             <button
+              ref={saveBtnRef}
               type="button"
-              onClick={() => void handlePrimarySave()}
-              disabled={saveStatus === 'syncing'}
+              onClick={() => setSaveConfirmOpen(true)}
+              disabled={isSaving || saveStatus === 'syncing'}
               className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-opacity disabled:opacity-60 whitespace-nowrap"
               style={{
                 backgroundColor: 'var(--mc-accent)',
                 color: 'var(--mc-accent-text)',
               }}
             >
-              <Save className="h-4 w-4" aria-hidden="true" />
-              <span>{saveStatus === 'syncing' ? '儲存中…' : '儲存'}</span>
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Save className="h-4 w-4" aria-hidden="true" />
+              )}
+              <span>{isSaving || saveStatus === 'syncing' ? '儲存中…' : '儲存'}</span>
             </button>
           </div>
         </div>
       </header>
+
+      {/* Manual Save Result Feedback Banner */}
+      {saveFeedback && (
+        <div
+          role={
+            saveFeedback.kind === 'save_failed' || saveFeedback.kind === 'saved_local_unsynced'
+              ? 'alert'
+              : 'status'
+          }
+          aria-live={
+            saveFeedback.kind === 'save_failed' || saveFeedback.kind === 'saved_local_unsynced'
+              ? 'assertive'
+              : 'polite'
+          }
+          className="border-b px-4 py-3 text-xs"
+          style={{
+            backgroundColor:
+              saveFeedback.kind === 'save_failed'
+                ? 'rgba(180,60,50,0.18)'
+                : saveFeedback.kind === 'saved_local_unsynced'
+                ? 'rgba(212,124,93,0.14)'
+                : 'var(--mc-bg-elevated)',
+            borderColor:
+              saveFeedback.kind === 'save_failed' || saveFeedback.kind === 'saved_local_unsynced'
+                ? '#d47c5d'
+                : 'var(--mc-accent)',
+            color: 'var(--mc-text-primary)',
+          }}
+        >
+          <div className="mx-auto flex max-w-[1440px] flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 items-start gap-2.5">
+              {saveFeedback.kind === 'save_failed' ? (
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#f5b482]" aria-hidden="true" />
+              ) : saveFeedback.kind === 'saved_local_unsynced' ? (
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#f5b482]" aria-hidden="true" />
+              ) : (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#7fd1a8]" aria-hidden="true" />
+              )}
+              <div className="min-w-0 space-y-0.5">
+                <p className="font-semibold">
+                  {saveFeedback.title}
+                  {saveFeedback.savedAt && (
+                    <span className="ml-2 font-normal tabular-nums" style={{ color: 'var(--mc-text-muted)' }}>
+                      （時間：{new Date(saveFeedback.savedAt).toLocaleTimeString('zh-TW')}）
+                    </span>
+                  )}
+                </p>
+                <p className="leading-relaxed" style={{ color: 'var(--mc-text-secondary)' }}>
+                  {saveFeedback.detail}
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {saveFeedback.canRetry && (
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={() => void handlePrimarySave()}
+                  className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg border px-3 py-1 font-medium hover:bg-white/5 disabled:opacity-50"
+                  style={{ borderColor: 'var(--mc-border)', color: 'var(--mc-text-primary)' }}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{saveFeedback.localSaved ? '重試同步' : '重試儲存'}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={clearSaveFeedback}
+                aria-label="關閉儲存通知"
+                className="inline-flex min-h-[34px] items-center gap-1 rounded-lg border px-2.5 py-1 hover:bg-white/5"
+                style={{ borderColor: 'var(--mc-border)', color: 'var(--mc-text-secondary)' }}
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>關閉</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Offline or App Update Notices */}
       {!isOnline && (
@@ -338,6 +440,21 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
+
+      <SaveConfirmModal
+        open={saveConfirmOpen}
+        isSaving={isSaving}
+        scope={saveScopeSummary}
+        lastSavedAt={lastSavedAt}
+        returnFocusTo={saveBtnRef}
+        onCancel={() => {
+          if (!isSaving) setSaveConfirmOpen(false);
+        }}
+        onConfirm={async () => {
+          await handlePrimarySave();
+          setSaveConfirmOpen(false);
+        }}
+      />
     </div>
   );
 };

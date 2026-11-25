@@ -20,27 +20,27 @@ export interface DocsExpectation {
 
 export const DOCS_EXPECTATION: DocsExpectation = {
   "appVersion": "1.0.0",
-  "docsVersion": "1.2.0",
-  "updatedAt": "2026-11-24",
+  "docsVersion": "1.3.0",
+  "updatedAt": "2026-11-25",
   "status": "published",
-  "sourceFingerprint": "7a60c2eb392c",
-  "docsFingerprint": "c842b1886fee",
+  "sourceFingerprint": "68561e2f4098",
+  "docsFingerprint": "4acc6cff6617",
   "documents": {
     "system-specification": {
       "id": "system-specification",
       "title": "系統規格書",
       "fileName": "system-specification.pdf",
-      "pageCount": 14,
-      "byteSize": 5568728,
-      "sha256": "44aba5811acb0211eb368585c83c0341ad4f26104b0d55a551f538e337f157ba"
+      "pageCount": 16,
+      "byteSize": 6116718,
+      "sha256": "2ce854852a99ead57592b2338c0e113bf1a8958b072bb9a90f88e6472223850f"
     },
     "user-guide": {
       "id": "user-guide",
       "title": "使用操作手冊",
       "fileName": "user-guide.pdf",
-      "pageCount": 13,
-      "byteSize": 4861911,
-      "sha256": "be603ac56b059e7232a15fa5060e953037b2a3b2394a6c432baf6d116fb7cd25"
+      "pageCount": 14,
+      "byteSize": 5270130,
+      "sha256": "bbc26464484f8888b8a112b74be86d924a429353da76c8bc91c718415aaac7e0"
     }
   }
 };

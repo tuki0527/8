@@ -9,7 +9,7 @@
 **MoonCode 月海程式學習室**（名稱可於設定頁自訂，預設 `MoonCode 月海程式學習室`）是一套為個人自用設計的互動式程式設計學習網站，協助已具備變數、判斷式與函式基礎的讀者，透過手機與電腦掌握 **C# 物件導向設計（Object-Oriented Programming, OOP）**、類別設計、**高內聚低耦合（High Cohesion / Low Coupling）**、**依賴注入（Dependency Injection, DI）** 與 **MVC（Model-View-Controller）** 架構。
 
 - **教學語言與術語**：全面採用繁體中文與臺灣常見技術用語，專有名詞於首次出現時附上英文對照；教學程式碼固定採用 **C#**（不以 Unity 專屬 API 作為基礎）。
-- **本文件對應基準**：`package.json` 版本 `1.0.0`、文件版本 `v1.2.0`（更新日期 `2026-11-24`），內容依目前實際專案原始碼查證撰寫；截圖均於隔離的本機預覽與測試環境實機擷取，不暴露使用者個人作答紀錄、帳號或憑證。
+- **本文件對應基準**：`package.json` 版本 `1.0.0`、文件版本 `v1.3.0`（更新日期 `2026-11-25`），內容依目前實際專案原始碼查證撰寫；截圖均於隔離的本機預覽與測試環境實機擷取，不暴露使用者個人作答紀錄、帳號或憑證。
 
 <!-- FIGURE: 01_home | 圖 1：首頁總覽實機畫面（潔淨初始狀態），顯示學習導覽選單、月海橫幅、學習摘要卡、複習建議與 9 章課程地圖。 -->
 
@@ -138,7 +138,13 @@ $$M = \begin{cases} \text{round}\Big(100 \cdot A \cdot (0.9 + 0.1 \cdot F)\Big),
 - **`MANUAL_AI_ADAPTER_STATUS`（已啟用）**：**Plus 手動 JSON 往返模式**，完整可用。
 - **`UNVERIFIED_AUTO_ADAPTER_STATUS`（未啟用）**：**官方自動連線擴充介面**，在官方文件、應用資格與真實登入／請求完成驗證前維持停用，介面明確標示未連線。
 
-### 8.1 三項手動任務與防呆保護
+### 8.1 三項手動任務、檔案往返契約與防呆保護
+
+系統明確區分 **送給 ChatGPT：`提示詞 .txt`** 與 **從 ChatGPT 帶回網站：`回覆 .json`**，完整流程分為 **5 步驟**：`1. 下載提示詞 TXT → 2. 交給 ChatGPT Plus → 3. 取得 .json 附件 → 4. 匯入並執行驗證 → 5. 確認套用至本機`。
+
+- **提示詞檔案下載（主要方式）**：產生 `AiRequest` 後，點擊 **「下載提示詞（.txt）」** 會將 `activeRequest.promptText` 以純 UTF-8（`text/plain;charset=utf-8`）匯出為 `mooncode-<task>-<requestId>.txt`，不做 HTML escaping 或多餘加工（同時保留預覽文字框與「複製提示詞（備用）」）。尚未產生有效請求時下載按鈕維持停用，防止匯出空白檔；重覆點擊下載既有請求的 `.txt` 只會重下同一份內容，**不會產生新 `requestId` 或新資料庫紀錄**。唯有使用者主動點擊 **「重新產生（建立新 Request ID）」** 時才會建立新請求。
+- **要求 AI 優先回傳 `.json` 附件**：任務 A、B、C 的提示詞均明確指示 ChatGPT 優先建立並提供可下載的純 UTF-8 `.json` 檔案附件；僅在介面不支援產檔時，才退回直接輸出可被 `JSON.parse` 解析的純原始 JSON（禁止 `&quot;` 等 HTML 編碼、外層額外字串包裝或行尾反斜線）。
+- **嚴格驗證與多請求狀態獨立性**：匯入端維持「先執行完整 Schema 與安全性驗證、通過預覽後才由使用者點擊確認套用」兩段式流程；系統不對不合法字串執行全域移除反斜線或全域 HTML 解碼以掩蓋錯誤。各筆 `AiRequest` 依 `requestId` 獨立追蹤狀態（`已套用` / `待回覆`）；已套用請求若再次匯入相同 `requestId` 與 `answerHash` 會自動去重不重複計分，且不會影響其他仍為 `待回覆` 的不同 `requestId`。
 
 | 任務類型 | 打包給 ChatGPT Plus 的資料內容 | 寫入前強制驗證規則（`validateAndTransformAiImport`） |
 | --- | --- | --- |
@@ -146,13 +152,23 @@ $$M = \begin{cases} \text{round}\Big(100 \cdot A \cdot (0.9 + 0.1 \cdot F)\Big),
 | 任務 B：`evaluate_short_answers`（批改 3 題理解題） | 指定已完成 `TestRun` 內恰好 3 題理解題之題幹、必要檢核點、核心迷思、參考理解、學生回答與 `answerHash` | 核對 `testRunId`、`answerId` 必須屬於本次待評 3 題且不重複、`questionVersion` 與 `answerHash` 完全一致；由系統依據 `checks` 與 `contradictions` 重算 `correct` 並寫入新 `revision`，重複回覆不重複計分。 |
 | 任務 C：`rewrite_slide`（簡報改寫） | 鎖定區上下文（唯讀參考）、目前可編輯欄位、`baseContentVersion` 與改寫模式 | 拒絕包含任何 `LOCKED_SLIDE_KEYS`（`locked`、`definition`、`code`、`expectedBehavior`、`learningObjectives`、`rubricBasis`、`corePoint`）；核對 `baseContentVersion` 相符；`analogy_only` 模式下拒絕更改 `detailLevel` 或 `layoutVariant`。 |
 
-<!-- FIGURE: 08_ai_workbench | 圖 8：AI 互動工作台畫面，清楚區分「Plus 手動 JSON 往返模式（已啟用）」與「官方自動連線擴充介面（未啟用）」，提供產生 Request ID 與貼回／匯入 JSON 驗證功能。 -->
+<!-- FIGURE: 08_ai_workbench | 圖 8：AI 互動工作台實機畫面，呈現 5 步驟檔案往返導引、任務切換、下載提示詞（.txt）主按鈕、.json 檔案匯入區與獨立 Request ID 紀錄。 -->
 
 ---
 
 ## 9. 本機保存、備份、跨裝置同步與版本復原
 
 資料儲存採 **「本機 IndexedDB 為主、GitHub 私有倉庫分片為跨裝置同步來源」** 設計。未配置後端 GitHub App Secrets 時，系統於前端誠實呈現「本機模式」，所有學習、測驗、備份與改寫功能均正常運作，絕不將本機落盤偽裝為雲端同步成功。
+
+### 9.0 頂端手動「儲存」確認、非同步鎖定與真實結果回饋
+
+- **不干擾日常自動保存**：測驗逐題送出（`commitQuizAnswer`）與簡報自訂改寫仍維持背景靜默寫入本機 IndexedDB，不會跳出確認視窗。
+- **手動確認對話框（`SaveConfirmModal`）**：點擊頂端 **「儲存」** 後開啟「確認儲存」無障礙對話框（支援 `Escape`、`Tab` 焦點循環、關閉還原焦點與 375px 手機版面），依真實模式分別說明寫入本機範圍（`本機模式` / `已完成授權並可同步雲端` / `離線或連線暫不可用`）。點擊 **「取消」** 僅中止本次手動觸發，絕不呼叫 `handlePrimarySave`，也不會清除或回滾既有資料。
+- **真正非同步完成後才回饋**：確認後鎖定按鈕顯示「儲存中…」防止重複送出；系統執行 `persistManualLocalSave` 寫入並回讀確認本機 `lastManualSavedAt` 後，若已授權且在線才執行 `runCloudSave`，並透過 `role="status"` / `role="alert"` 橫幅誠實區分四種結果：**「已儲存至本機」**、**「已儲存至本機並完成同步」**、**「已儲存至本機，目前尚未同步」**（說明離線或失敗原因並提供 **「重試同步」**），以及 **「儲存失敗」**（不更新最近儲存時間、完整保留既有資料並提供 **「重試儲存」**）。
+
+<!-- FIGURE: 16_save_confirm_dialog | 圖 9：點擊頂端「儲存」開啟之確認儲存對話框，依實際連線與授權模式說明儲存範圍並提供取消與確認儲存操作。 -->
+
+<!-- FIGURE: 17_save_result_banner | 圖 10：確認儲存真正完成後呈現之結果通知橫幅，誠實區分本機保存與雲端同步狀態並標示實際完成時間。 -->
 
 ### 9.1 檔案分層與 `StudyBundle` 備份
 
@@ -167,7 +183,7 @@ $$M = \begin{cases} \text{round}\Big(100 \cdot A \cdot (0.9 + 0.1 \cdot F)\Big),
 3. **舊裝置隔離區（Epoch Quarantine）**：離線舊裝置若持有舊 `syncEpoch` 的待同步 `outbox` 作業，再次同步偵測到遠端 `syncEpoch > localEpoch` 時，系統不會自動補回覆蓋復原結果，而是先將本地資料對齊遠端最新快照，並將舊作業移入隔離區，交由使用者於「儲存與版本」逐筆決定「重新匯入目前 Epoch」或「安全丟棄」。
 4. **可達性垃圾清理（Reachability GC）**：需先執行 Dry-Run 掃描計算 `active` 與 `previous` 兩版共同引用的可達路徑集合，僅從最新樹狀快照移除「兩版皆不再引用」的過期索引與分片（同時如實提醒 Git commit 歷史本身仍會保留舊記錄）。
 
-<!-- FIGURE: 12_storage_versions | 圖 9：儲存、版本管理與備份還原頁面（本機模式狀態），呈現 Generation／SyncEpoch、StudyBundle 匯出匯入、Reachability GC 與章節封存匯出。 -->
+<!-- FIGURE: 12_storage_versions | 圖 11：儲存、版本管理與備份還原頁面（本機模式狀態），呈現 Generation／SyncEpoch、StudyBundle 匯出匯入、Reachability GC 與章節封存匯出。 -->
 
 ---
 
@@ -187,7 +203,7 @@ $$M = \begin{cases} \text{round}\Big(100 \cdot A \cdot (0.9 + 0.1 \cdot F)\Big),
 2. **防止 PWA SPA 回退與過期文件**：`vite.config.ts` 已將 `/^\/system-docs\//i` 加入 `navigateFallbackDenylist` 並設定 `NetworkFirst` 快取策略；下載按鈕實際透過 JS 讀取陣列位元組，依序驗證 HTTP 200、`Content-Type` 非 `text/html`、`%PDF-` 檔頭與清單 `sha256`，通過後才觸發檔案保存。
 3. **版本一致與防竄改鎖定**：文件配置（`docs/docs-config.json`）、圖資清單（`docs/screenshots/manifest.json`）與自動產生之預期常數（`src/generated/docsExpectation.ts`）由產製腳本統一計算 `sourceFingerprint`（所有受追蹤核心程式之 SHA-256 摘要）、`docsFingerprint` 與兩份 PDF 的頁數、位元組長度及雜湊。開發與建置檢查 `npm run docs:verify` 會偵測文件遺漏、程式修改未同步更新文件或檔案損毀並阻止錯誤發布。
 
-<!-- FIGURE: 14_system_docs | 圖 10：系統文件下載頁實機畫面，呈現版本核對通過狀態、更新日期與兩顆明確 PDF 下載按鈕。 -->
+<!-- FIGURE: 14_system_docs | 圖 12：系統文件下載頁實機畫面，呈現版本核對通過狀態、更新日期與兩顆明確 PDF 下載按鈕。 -->
 
 ---
 
@@ -197,7 +213,7 @@ $$M = \begin{cases} \text{round}\Big(100 \cdot A \cdot (0.9 + 0.1 \cdot F)\Big),
 | --- | --- | --- |
 | 9 章教材、步驟模擬與安全改寫 | **本機立即可用** | 純前端內建與 IndexedDB 保存；步驟模擬明確標示非瀏覽器 C# 編譯器。 |
 | 7+3 測驗、計時、錯題本、掌握度與 StudyBundle | **本機立即可用** | 完整離線讀寫、Worker 背景驗證匯入與覆蓋保護快照皆可獨立運行。 |
-| ChatGPT Plus 手動 JSON 往返工作台 | **本機立即可用** | 使用者自行複製提示詞交給 ChatGPT Plus，貼回或匯入 JSON 經網站驗證套用。 |
+| ChatGPT Plus 手動 JSON 往返工作台 | **本機立即可用** | 下載純文字提示詞（`.txt`）交給 ChatGPT Plus，優先匯入 `.json` 回覆附件經網站驗證套用（亦保留複製與貼回備用）。 |
 | 系統文件 PDF 檢視與下載 | **本機與靜態部署可用** | `public/system-docs/` 隨專案靜態資產供應；首次離線尚未快取時會誠實提示需先連線。 |
 | Cloudflare Workers + Static Assets 同源 API | **部署架構與 `dry-run` 已就緒；待實際登入部署** | 執行 `npx wrangler login`、`npm run preflight` 與 `npm run deploy` 後可取得公開 HTTPS 網址；未部署或未登入前不提供猜測網址。 |
 | GitHub 私有資料倉庫自動同步 | **程式與邏輯已實作；待外部憑證設定與實帳號驗證** | 需自行建立 GitHub 私有倉庫與 GitHub App，將 `GITHUB_APP_ID`、`GITHUB_APP_CLIENT_ID`、`GITHUB_APP_CLIENT_SECRET`、`GITHUB_APP_PRIVATE_KEY`、`GITHUB_APP_INSTALLATION_ID`、`GITHUB_DATA_OWNER`、`GITHUB_DATA_REPO`、`ALLOWED_GITHUB_USER_ID`、`SESSION_SECRET` 寫入後端 Worker Secrets，並在設定頁完成 OAuth 登入。 |

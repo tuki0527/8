@@ -52,6 +52,7 @@ export interface LocalStoreSnapshot {
   syncEpoch: number;
   generation: number;
   datasetId: string;
+  lastSavedAt: string | null;
 }
 
 class IndexedDbSyncBackend implements LocalSyncBackend {
@@ -212,10 +213,11 @@ export async function loadLocalSnapshot(): Promise<LocalStoreSnapshot> {
     aiRequests,
     issueReports,
     headMeta,
-    lkgMeta,
+    lastKnownGoodPointer,
     syncEpoch,
     generation,
     datasetId,
+    lastSavedAt,
   ] = await Promise.all([
     db.getAll('question_sets'),
     db.getAll('test_runs'),
@@ -232,6 +234,7 @@ export async function loadLocalSnapshot(): Promise<LocalStoreSnapshot> {
     getMetaValue<number>('syncEpoch', 1),
     getMetaValue<number>('generation', 0),
     getMetaValue<string>('datasetId', 'mooncode-primary'),
+    getMetaValue<string | null>('lastManualSavedAt', null),
   ]);
 
   const deletedSetIds = new Set(
@@ -253,10 +256,11 @@ export async function loadLocalSnapshot(): Promise<LocalStoreSnapshot> {
     aiRequests,
     issueReports,
     pointer: headMeta ? (headMeta.data as ActivePointer) : null,
-    lastKnownGoodPointer: lkgMeta ? (lkgMeta.data as ActivePointer) : null,
+    lastKnownGoodPointer: lastKnownGoodPointer ? (lastKnownGoodPointer.data as ActivePointer) : null,
     syncEpoch,
     generation,
     datasetId,
+    lastSavedAt,
   };
 }
 
@@ -277,6 +281,10 @@ export async function recordTestRunStart(run: TestRun): Promise<void> {
 
 export async function updateInProgressRunTimer(run: TestRun): Promise<void> {
   const db = await getDb();
+  const existing = await db.get('test_runs', run.testRunId);
+  if (existing && existing.status !== 'in_progress') {
+    return;
+  }
   await db.put('test_runs', run);
 }
 
@@ -728,6 +736,23 @@ export async function restorePreOverwriteLocalBackup(): Promise<boolean> {
   if (!prev) return false;
   const res = await importStudyBundle(JSON.stringify(prev), 'overwrite');
   return res.ok;
+}
+
+export async function persistManualLocalSave(settings: AppSettings): Promise<{
+  savedAt: string;
+  snapshot: LocalStoreSnapshot;
+}> {
+  const savedAt = new Date().toISOString();
+  saveAppSettings(settings);
+  await initializeLocalStore();
+  await setMetaValue('lastManualSavedAt', savedAt);
+  const verifiedTimestamp = await getMetaValue<string | null>('lastManualSavedAt', null);
+  if (verifiedTimestamp !== savedAt) {
+    throw new Error('本機 IndexedDB 回讀確認失敗，請確認瀏覽器儲存空間是否已滿或停用。');
+  }
+  const snapshot = await loadLocalSnapshot();
+  broadcastDataChange('manual_local_save');
+  return { savedAt, snapshot };
 }
 
 export async function runCloudSave(

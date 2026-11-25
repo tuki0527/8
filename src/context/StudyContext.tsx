@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ALL_CONCEPTS,
   CANONICAL_CHAPTERS,
@@ -28,6 +36,7 @@ import {
   type LocalStoreSnapshot,
   httpRemoteAdapter,
   loadLocalSnapshot,
+  persistManualLocalSave,
   runCloudSave,
 } from '../storage/studyStore.ts';
 
@@ -37,6 +46,76 @@ export interface SyncAuthState {
   user?: { id: string; login: string };
   targetRepo?: string;
   branch?: string;
+}
+
+export type SaveModeKind = 'local_only' | 'authorized_online' | 'offline_or_unavailable';
+
+export type SaveResultKind =
+  | 'saved_local'
+  | 'saved_and_synced'
+  | 'saved_local_unsynced'
+  | 'save_failed';
+
+export interface SaveFeedbackNotice {
+  id: string;
+  kind: SaveResultKind;
+  title: string;
+  detail: string;
+  savedAt: string | null;
+  localSaved: boolean;
+  synced: boolean;
+  canRetry: boolean;
+}
+
+export interface SaveScopeSummary {
+  mode: SaveModeKind;
+  modeLabel: string;
+  description: string;
+  pendingCount: number;
+  questionSetCount: number;
+  answerCount: number;
+}
+
+export function buildSaveScopeSummary(
+  isOnline: boolean,
+  syncAuth: SyncAuthState,
+  snapshot: LocalStoreSnapshot | null
+): SaveScopeSummary {
+  const pendingCount = snapshot?.pendingOutbox.length ?? 0;
+  const questionSetCount = snapshot?.questionSets.length ?? 0;
+  const answerCount = snapshot?.answers.length ?? 0;
+
+  if (!syncAuth.configured || !syncAuth.authenticated) {
+    return {
+      mode: 'local_only',
+      modeLabel: '本機模式（未啟用 GitHub 雲端同步）',
+      description:
+        '資料將寫入並核對目前裝置的本機儲存（IndexedDB 與 localStorage）。目前未設定或未登入 GitHub 私有資料倉庫，不會宣稱已同步至雲端。',
+      pendingCount,
+      questionSetCount,
+      answerCount,
+    };
+  }
+
+  if (!isOnline) {
+    return {
+      mode: 'offline_or_unavailable',
+      modeLabel: '離線或連線暫不可用',
+      description: `目前裝置處於離線狀態。本次會先確保學習資料與設定安全寫入本機 IndexedDB，待同步佇列（${pendingCount} 筆）將於恢復連線後再執行同步。`,
+      pendingCount,
+      questionSetCount,
+      answerCount,
+    };
+  }
+
+  return {
+    mode: 'authorized_online',
+    modeLabel: '已完成授權並可同步雲端',
+    description: `本次會先確保本機 IndexedDB 與設定儲存完成，再將待同步變更（${pendingCount} 筆）安全推送至已授權的 GitHub 私有資料倉庫${syncAuth.targetRepo ? `（${syncAuth.targetRepo}）` : ''}。`,
+    pendingCount,
+    questionSetCount,
+    answerCount,
+  };
 }
 
 interface StudyContextValue {
@@ -52,7 +131,12 @@ interface StudyContextValue {
   refreshSyncAuth: () => Promise<void>;
   saveStatus: SaveSyncStatus;
   saveStatusMessage: string;
-  handlePrimarySave: () => Promise<void>;
+  isSaving: boolean;
+  lastSavedAt: string | null;
+  saveScopeSummary: SaveScopeSummary;
+  saveFeedback: SaveFeedbackNotice | null;
+  clearSaveFeedback: () => void;
+  handlePrimarySave: () => Promise<SaveFeedbackNotice | null>;
   conceptMasteries: MasterySummary[];
   chapterMasteries: ChapterMasterySummary[];
   dueReviews: ReviewItem[];
@@ -79,11 +163,18 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [saveStatus, setSaveStatus] = useState<SaveSyncStatus>('local_only');
   const [saveStatusMessage, setSaveStatusMessage] = useState('本機模式');
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [saveFeedback, setSaveFeedback] = useState<SaveFeedbackNotice | null>(null);
+  const savingLockRef = useRef(false);
 
   const reloadSnapshot = useCallback(async () => {
     try {
       const data = await loadLocalSnapshot();
       setSnapshot(data);
+      if (data.lastSavedAt) {
+        setLastSavedAt(data.lastSavedAt);
+      }
       setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : '無法讀取本機學習資料庫');
@@ -196,7 +287,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Derive saveStatus cleanly from real state
   useEffect(() => {
-    if (!snapshot) return;
+    if (!snapshot || isSaving) return;
     if (snapshot.quarantined.length > 0) {
       setSaveStatus('conflict_quarantine');
       setSaveStatusMessage(`隔離區 ${snapshot.quarantined.length} 筆待確認`);
@@ -230,7 +321,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSaveStatus('saved_local');
       setSaveStatusMessage('已儲存本機');
     }
-  }, [snapshot, syncAuth, isOnline]);
+  }, [snapshot, syncAuth, isOnline, isSaving]);
 
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
     setSettings((prev) => {
@@ -244,33 +335,165 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   }, []);
 
-  const handlePrimarySave = useCallback(async () => {
-    await reloadSnapshot();
-    if (!isOnline) {
-      setSaveStatus('saved_local');
-      setSaveStatusMessage('目前離線，已確保資料安全寫入本機 IndexedDB');
-      return;
+  const clearSaveFeedback = useCallback(() => {
+    setSaveFeedback(null);
+  }, []);
+
+  const saveScopeSummary = useMemo(
+    () => buildSaveScopeSummary(isOnline, syncAuth, snapshot),
+    [isOnline, syncAuth, snapshot]
+  );
+
+  const handlePrimarySave = useCallback(async (): Promise<SaveFeedbackNotice | null> => {
+    if (savingLockRef.current) {
+      return null;
     }
-    if (!syncAuth.configured || !syncAuth.authenticated) {
-      setSaveStatus('saved_local');
-      setSaveStatusMessage('已儲存本機（本機模式：未連線 GitHub 倉庫）');
-      return;
-    }
+    savingLockRef.current = true;
+    setIsSaving(true);
     setSaveStatus('syncing');
-    setSaveStatusMessage('安全同步中…');
-    const outcome = await runCloudSave(settings.deviceId, httpRemoteAdapter);
-    await reloadSnapshot();
-    if (outcome.ok) {
-      setSaveStatus('synced');
-      setSaveStatusMessage(outcome.message);
-    } else if (outcome.status === 'conflict_quarantine') {
-      setSaveStatus('conflict_quarantine');
-      setSaveStatusMessage(outcome.message);
-    } else {
-      setSaveStatus('sync_failed');
-      setSaveStatusMessage(outcome.message);
+    setSaveStatusMessage('儲存中…');
+
+    let notice: SaveFeedbackNotice;
+    try {
+      let localSavedSnapshot: LocalStoreSnapshot;
+      let savedAt: string;
+
+      try {
+        const localRes = await persistManualLocalSave(settings);
+        localSavedSnapshot = localRes.snapshot;
+        savedAt = localRes.savedAt;
+        setSnapshot(localSavedSnapshot);
+        setLastSavedAt(savedAt);
+      } catch (localErr) {
+        const reason = localErr instanceof Error ? localErr.message : String(localErr);
+        setSaveStatus('sync_failed');
+        setSaveStatusMessage('儲存失敗（未修改既有資料）');
+        notice = {
+          id: `save-err-${Date.now()}`,
+          kind: 'save_failed',
+          title: '儲存失敗',
+          detail: `本機寫入或確認未完成，既有學習資料維持不變。原因：${reason}`,
+          savedAt: null,
+          localSaved: false,
+          synced: false,
+          canRetry: true,
+        };
+        setSaveFeedback(notice);
+        return notice;
+      }
+
+      const onlineNow =
+        isOnline && (typeof navigator === 'undefined' || navigator.onLine !== false);
+      const countsText = `已安全寫入本機 IndexedDB（${localSavedSnapshot.questionSets.length} 組題組、${localSavedSnapshot.answers.length} 筆作答）。`;
+
+      if (!syncAuth.configured || !syncAuth.authenticated) {
+        setSaveStatus('saved_local');
+        setSaveStatusMessage('已儲存至本機（本機模式）');
+        notice = {
+          id: `save-local-${Date.now()}`,
+          kind: 'saved_local',
+          title: '已儲存至本機',
+          detail: `${countsText}${
+            onlineNow
+              ? '目前為本機模式（未連線 GitHub 倉庫），未宣稱已同步雲端。'
+              : '目前裝置離線且為本機模式，資料已安全保留於此裝置。'
+          }`,
+          savedAt,
+          localSaved: true,
+          synced: false,
+          canRetry: false,
+        };
+        setSaveFeedback(notice);
+        return notice;
+      }
+
+      if (!onlineNow) {
+        setSaveStatus('saved_local');
+        setSaveStatusMessage(
+          `已儲存至本機（離線 · 待同步 ${localSavedSnapshot.pendingOutbox.length} 筆）`
+        );
+        notice = {
+          id: `save-offline-${Date.now()}`,
+          kind: 'saved_local_unsynced',
+          title: '已儲存至本機，目前尚未同步',
+          detail: `${countsText}原因：目前裝置處於離線狀態（待同步佇列 ${localSavedSnapshot.pendingOutbox.length} 筆），請於恢復網路連線後重試同步。`,
+          savedAt,
+          localSaved: true,
+          synced: false,
+          canRetry: true,
+        };
+        setSaveFeedback(notice);
+        return notice;
+      }
+
+      setSaveStatusMessage('安全同步至 GitHub 中…');
+      try {
+        const outcome = await runCloudSave(settings.deviceId, httpRemoteAdapter);
+        await reloadSnapshot();
+        if (outcome.ok) {
+          setSaveStatus('synced');
+          setSaveStatusMessage(outcome.message);
+          notice = {
+            id: `save-synced-${Date.now()}`,
+            kind: 'saved_and_synced',
+            title: '已儲存至本機並完成同步',
+            detail: `${countsText}${outcome.message}`,
+            savedAt,
+            localSaved: true,
+            synced: true,
+            canRetry: false,
+          };
+        } else if (outcome.status === 'conflict_quarantine') {
+          setSaveStatus('conflict_quarantine');
+          setSaveStatusMessage(outcome.message);
+          notice = {
+            id: `save-quarantine-${Date.now()}`,
+            kind: 'saved_local_unsynced',
+            title: '已儲存至本機，目前尚未同步',
+            detail: `${countsText}雲端未完成自動同步：${outcome.message}`,
+            savedAt,
+            localSaved: true,
+            synced: false,
+            canRetry: false,
+          };
+        } else {
+          setSaveStatus('sync_failed');
+          setSaveStatusMessage(outcome.message);
+          notice = {
+            id: `save-unsynced-${Date.now()}`,
+            kind: 'saved_local_unsynced',
+            title: '已儲存至本機，目前尚未同步',
+            detail: `${countsText}本機保存已成功，但雲端同步失敗：${outcome.message}`,
+            savedAt,
+            localSaved: true,
+            synced: false,
+            canRetry: true,
+          };
+        }
+      } catch (cloudErr) {
+        await reloadSnapshot();
+        const reason = cloudErr instanceof Error ? cloudErr.message : String(cloudErr);
+        setSaveStatus('sync_failed');
+        setSaveStatusMessage(`雲端同步未完成：${reason}`);
+        notice = {
+          id: `save-cloud-err-${Date.now()}`,
+          kind: 'saved_local_unsynced',
+          title: '已儲存至本機，目前尚未同步',
+          detail: `${countsText}本機保存已成功，但雲端同步發生錯誤：${reason}`,
+          savedAt,
+          localSaved: true,
+          synced: false,
+          canRetry: true,
+        };
+      }
+
+      setSaveFeedback(notice);
+      return notice;
+    } finally {
+      savingLockRef.current = false;
+      setIsSaving(false);
     }
-  }, [isOnline, reloadSnapshot, settings.deviceId, syncAuth]);
+  }, [isOnline, reloadSnapshot, settings, syncAuth]);
 
   const conceptMasteries = useMemo(() => {
     if (!snapshot) return [];
@@ -400,6 +623,11 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         refreshSyncAuth,
         saveStatus,
         saveStatusMessage,
+        isSaving,
+        lastSavedAt,
+        saveScopeSummary,
+        saveFeedback,
+        clearSaveFeedback,
         handlePrimarySave,
         conceptMasteries,
         chapterMasteries,

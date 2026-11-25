@@ -214,6 +214,8 @@ async function main() {
     // =========================================================================
     const needsContextA =
       need('01_home') ||
+      need('16_save_confirm_dialog') ||
+      need('17_save_result_banner') ||
       need('02_chapter_slides') ||
       need('03_chapter_rewrite_edit') ||
       need('04_question_bank') ||
@@ -240,6 +242,51 @@ async function main() {
             },
             recordsMap
           );
+        }
+
+        if (need('16_save_confirm_dialog') || need('17_save_result_banner')) {
+          await page.getByRole('button', { name: '儲存', exact: true }).click();
+          await page.waitForSelector('role=dialog[name="確認儲存"]', { timeout: 10000 });
+          await settlePage(page, 250);
+
+          if (need('16_save_confirm_dialog')) {
+            await recordScreenshot(
+              page,
+              {
+                id: '16_save_confirm_dialog',
+                route: '/ (save confirmation dialog)',
+                viewportLabel: '1440x900',
+                stateDescription: '點擊頂端「儲存」開啟之確認儲存對話框，顯示本機模式範圍說明與「取消」／「確認儲存」按鈕。',
+              },
+              recordsMap
+            );
+          }
+
+          await page
+            .getByRole('dialog', { name: '確認儲存' })
+            .getByRole('button', { name: '確認儲存', exact: true })
+            .click();
+          await page.waitForSelector('text=已儲存至本機', { timeout: 10000 });
+          await settlePage(page, 300);
+
+          if (need('17_save_result_banner')) {
+            await recordScreenshot(
+              page,
+              {
+                id: '17_save_result_banner',
+                route: '/ (save result notification)',
+                viewportLabel: '1440x900',
+                stateDescription: '完成手動儲存確認後顯示之結果通知橫幅（「已儲存至本機」），呈現實際完成時間與關閉按鈕。',
+              },
+              recordsMap
+            );
+          }
+
+          // Close banner cleanly before capturing subsequent Context A views
+          const dismissBtn = page.getByRole('button', { name: '關閉儲存通知' });
+          if (await dismissBtn.isVisible().catch(() => false)) {
+            await dismissBtn.click();
+          }
         }
 
         if (need('02_chapter_slides') || need('03_chapter_rewrite_edit')) {
@@ -477,6 +524,8 @@ async function main() {
         if (need('08_ai_workbench')) {
           await page.goto(`${baseUrl}/#/ai?task=evaluate_short_answers`, { waitUntil: 'networkidle' });
           await page.waitForSelector('text=AI 互動工作台', { timeout: 15000 });
+          await page.getByRole('button', { name: '產生提示詞與 Request ID' }).click();
+          await page.waitForSelector('text=提示詞純文字預覽', { timeout: 10000 }).catch(() => {});
           await settlePage(page, 350);
           await recordScreenshot(
             page,
@@ -484,7 +533,7 @@ async function main() {
               id: '08_ai_workbench',
               route: '/ai',
               viewportLabel: '1440x900',
-              stateDescription: 'AI 互動工作台畫面，呈現 Plus 手動 JSON 往返已啟用與官方自動連線未啟用狀態、任務 B 待評計數及 JSON 匯入驗證區。',
+              stateDescription: 'AI 互動工作台實機畫面，呈現 5 步驟 TXT→JSON 導引、任務 B 已產生提示詞與「下載提示詞（.txt）」主按鈕、.json 檔案匯入區與本機 Request ID 紀錄。',
             },
             recordsMap
           );

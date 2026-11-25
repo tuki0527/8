@@ -2,13 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
+  ArrowRight,
   Bot,
   Check,
   CheckCircle2,
   Copy,
+  Download,
   ExternalLink,
+  FileCode2,
+  FileText,
   FileUp,
   Info,
+  RefreshCw,
 } from 'lucide-react';
 import {
   ALL_CONCEPTS,
@@ -21,13 +26,37 @@ import {
   type AiImportValidationResult,
   MANUAL_AI_ADAPTER_STATUS,
   UNVERIFIED_AUTO_ADAPTER_STATUS,
+  buildAiPromptFilename,
   buildEvaluateShortAnswersRequest,
   buildGenerateSetRequest,
   buildRewriteSlideRequest,
+  extractJsonFromPaste,
   validateAndTransformAiImport,
 } from '../domain/aiRoundtrip.ts';
 import type { AiRequest, AiTaskType, RewriteMode } from '../domain/types.ts';
 import { applyValidatedAiImport, saveAiRequestRecord } from '../storage/studyStore.ts';
+
+const TASK_LABELS: Record<AiTaskType, string> = {
+  generate_question_set: '任務 A：產生 7+3 新題組',
+  evaluate_short_answers: '任務 B：批改 3 題理解題',
+  rewrite_slide: '任務 C：改寫簡報比喻與版面',
+};
+
+function triggerUtf8TextDownload(filename: string, content: string): void {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+}
 
 export const AiWorkbenchPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -84,17 +113,32 @@ export const AiWorkbenchPage: React.FC = () => {
   }, [rewriteChapter, rewriteSlideId]);
 
   // Prompt & Response Import state
-  const [activeRequest, setActiveRequest] = useState<AiRequest | null>(null);
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
+  const [fallbackActiveRequest, setFallbackActiveRequest] = useState<AiRequest | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [downloadNotice, setDownloadNotice] = useState<{
+    ok: boolean;
+    message: string;
+    targetReq?: AiRequest;
+  } | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [pasteJson, setPasteJson] = useState('');
   const [validation, setValidation] = useState<AiImportValidationResult | null>(null);
   const [applyMsg, setApplyMsg] = useState<string | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
 
+  const activeRequest = useMemo(() => {
+    if (!activeRequestId) return fallbackActiveRequest;
+    return (
+      snapshot?.aiRequests.find((r) => r.requestId === activeRequestId) ?? fallbackActiveRequest
+    );
+  }, [activeRequestId, fallbackActiveRequest, snapshot?.aiRequests]);
+
   const handleGeneratePrompt = async () => {
     setGenError(null);
     setApplyMsg(null);
     setValidation(null);
+    setDownloadNotice(null);
     const epoch = snapshot?.syncEpoch ?? 1;
 
     try {
@@ -140,10 +184,36 @@ export const AiWorkbenchPage: React.FC = () => {
       }
 
       await saveAiRequestRecord(req);
+      setFallbackActiveRequest(req);
+      setActiveRequestId(req.requestId);
       await reloadSnapshot();
-      setActiveRequest(req);
     } catch (err) {
       setGenError(err instanceof Error ? err.message : '產生提示詞失敗');
+    }
+  };
+
+  const handleDownloadPromptTxt = (targetReq: AiRequest | null) => {
+    if (!targetReq || !targetReq.promptText.trim()) {
+      setDownloadNotice({
+        ok: false,
+        message: '目前沒有可下載的提示詞內容，請先點擊「產生提示詞與 Request ID」。',
+      });
+      return;
+    }
+    const filename = buildAiPromptFilename(targetReq.task, targetReq.requestId);
+    try {
+      triggerUtf8TextDownload(filename, targetReq.promptText);
+      setDownloadNotice({
+        ok: true,
+        message: `已開始下載提示詞檔案「${filename}」（UTF-8 純文字 .txt，Request ID：${targetReq.requestId.slice(0, 12)}…，不會產生重複請求）。`,
+        targetReq,
+      });
+    } catch (err) {
+      setDownloadNotice({
+        ok: false,
+        message: `提示詞檔案下載失敗，請重試或改用下方「複製提示詞（備用）」：${err instanceof Error ? err.message : String(err)}`,
+        targetReq,
+      });
     }
   };
 
@@ -176,27 +246,41 @@ export const AiWorkbenchPage: React.FC = () => {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
     const text = await file.text();
+    setUploadedFileName(file.name);
     setPasteJson(text);
     setValidation(null);
+    setApplyMsg(null);
   };
 
   const handleApplyValidated = async () => {
     if (!validation || !validation.ok) return;
-    const parsed = JSON.parse(
-      pasteJson.trim().replace(/^```(?:json)?\s*\r?\n([\s\S]*?)\r?\n```$/i, '$1')
-    ) as { requestId: string };
+    const parsed = JSON.parse(extractJsonFromPaste(pasteJson)) as { requestId: string };
     await applyValidatedAiImport(parsed.requestId, validation);
     await reloadSnapshot();
-    setApplyMsg(`已驗證並套用：${validation.summary}`);
+    if (validation.task === 'evaluate_short_answers' && validation.evaluations.length === 0) {
+      setApplyMsg(
+        `此評閱結果先前已匯入並套用過（Request ID：${parsed.requestId.slice(0, 12)}…），不會重複計分；其他待回覆請求仍維持獨立狀態。`
+      );
+    } else {
+      setApplyMsg(`已驗證並套用：${validation.summary}`);
+    }
     setValidation(null);
     setPasteJson('');
+    setUploadedFileName(null);
   };
+
+  const sortedRequests = useMemo(() => {
+    return [...(snapshot?.aiRequests ?? [])]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, 10);
+  }, [snapshot?.aiRequests]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <header className="space-y-2">
+      <header className="space-y-3">
         <h1 className="text-2xl font-semibold tracking-tight">AI 互動工作台</h1>
         <div className="grid gap-3 md:grid-cols-2 text-xs">
           <div
@@ -225,6 +309,56 @@ export const AiWorkbenchPage: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Clear 5-step TXT -> ChatGPT -> JSON flow guide */}
+        <div
+          className="rounded-2xl border p-4 space-y-2.5 text-xs"
+          style={{ backgroundColor: 'var(--mc-bg-secondary)', borderColor: 'var(--mc-border)' }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-semibold" style={{ color: 'var(--mc-text-primary)' }}>
+              檔案往返建議流程（降低網頁複製貼上格式損毀）
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className="inline-flex items-center gap-1 rounded-lg border px-2 py-0.5"
+                style={{ borderColor: 'var(--mc-border)', color: 'var(--mc-accent)' }}
+              >
+                <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>送給 ChatGPT：提示詞 TXT</span>
+              </span>
+              <span
+                className="inline-flex items-center gap-1 rounded-lg border px-2 py-0.5"
+                style={{ borderColor: 'var(--mc-border)', color: '#7fd1a8' }}
+              >
+                <FileCode2 className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>從 ChatGPT 帶回網站：回覆 JSON</span>
+              </span>
+            </div>
+          </div>
+
+          <ol className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--mc-text-secondary)' }}>
+            <li className="rounded-lg border px-2.5 py-1" style={{ borderColor: 'var(--mc-border)' }}>
+              1. 下載提示詞 TXT
+            </li>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+            <li className="rounded-lg border px-2.5 py-1" style={{ borderColor: 'var(--mc-border)' }}>
+              2. 交給 ChatGPT Plus
+            </li>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+            <li className="rounded-lg border px-2.5 py-1" style={{ borderColor: 'var(--mc-border)' }}>
+              3. 取得 .json 附件
+            </li>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+            <li className="rounded-lg border px-2.5 py-1" style={{ borderColor: 'var(--mc-border)' }}>
+              4. 匯入並執行驗證
+            </li>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+            <li className="rounded-lg border px-2.5 py-1" style={{ borderColor: 'var(--mc-border)' }}>
+              5. 確認套用至本機
+            </li>
+          </ol>
+        </div>
       </header>
 
       {/* Task Selector */}
@@ -244,7 +378,9 @@ export const AiWorkbenchPage: React.FC = () => {
             type="button"
             onClick={() => {
               setTask(t.id);
-              setActiveRequest(null);
+              setActiveRequestId(null);
+              setFallbackActiveRequest(null);
+              setDownloadNotice(null);
               setGenError(null);
             }}
             className="min-h-[42px] rounded-xl border px-4 py-2 text-xs font-semibold transition-colors"
@@ -259,12 +395,19 @@ export const AiWorkbenchPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Step 1: Configure & Generate Prompt Packet */}
+      {/* Step 1: Configure & Download Prompt TXT */}
       <section
         className="rounded-2xl border p-5 space-y-4"
         style={{ backgroundColor: 'var(--mc-bg-secondary)', borderColor: 'var(--mc-border)' }}
       >
-        <h2 className="text-base font-semibold">步驟 1：產生帶驗證權杖的提示詞與資料包</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-semibold">
+            步驟 1：產生並下載提示詞檔案（送給 ChatGPT：提示詞 .txt）
+          </h2>
+          <span className="text-xs" style={{ color: 'var(--mc-text-muted)' }}>
+            提示詞要求 AI 優先回傳可下載的 .json 檔案附件
+          </span>
+        </div>
 
         {task === 'generate_question_set' && (
           <label className="block text-xs space-y-1 max-w-md">
@@ -391,20 +534,51 @@ export const AiWorkbenchPage: React.FC = () => {
         )}
 
         {genError && (
-          <p className="text-xs" style={{ color: '#f5b482' }}>
+          <p role="alert" className="text-xs" style={{ color: '#f5b482' }}>
             {genError}
           </p>
         )}
 
         <div className="flex flex-wrap items-center gap-3">
+          {!activeRequest ? (
+            <button
+              type="button"
+              onClick={() => void handleGeneratePrompt()}
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold"
+              style={{ backgroundColor: 'var(--mc-accent)', color: 'var(--mc-accent-text)' }}
+            >
+              <Bot className="h-4 w-4" aria-hidden="true" />
+              <span>產生提示詞與 Request ID</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleGeneratePrompt()}
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border px-4 py-2 text-xs font-medium hover:bg-white/5"
+              style={{ borderColor: 'var(--mc-border)', color: 'var(--mc-text-primary)' }}
+            >
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>重新產生（建立新 Request ID）</span>
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() => void handleGeneratePrompt()}
-            className="inline-flex min-h-[42px] items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold"
-            style={{ backgroundColor: 'var(--mc-accent)', color: 'var(--mc-accent-text)' }}
+            disabled={!activeRequest}
+            onClick={() => handleDownloadPromptTxt(activeRequest)}
+            className="inline-flex min-h-[42px] items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-40"
+            style={
+              activeRequest
+                ? { backgroundColor: 'var(--mc-accent)', color: 'var(--mc-accent-text)' }
+                : {
+                    backgroundColor: 'var(--mc-bg-elevated)',
+                    border: '1px solid var(--mc-border)',
+                    color: 'var(--mc-text-muted)',
+                  }
+            }
           >
-            <Bot className="h-4 w-4" aria-hidden="true" />
-            <span>產生提示詞與 Request ID</span>
+            <Download className="h-4 w-4" aria-hidden="true" />
+            <span>下載提示詞（.txt）</span>
           </button>
 
           <a
@@ -419,24 +593,65 @@ export const AiWorkbenchPage: React.FC = () => {
           </a>
         </div>
 
+        {!activeRequest && (
+          <p className="text-xs" style={{ color: 'var(--mc-text-muted)' }}>
+            尚未產生提示詞時「下載提示詞（.txt）」會維持停用，以避免下載空白檔案；請先點選上方「產生提示詞與 Request ID」。
+          </p>
+        )}
+
+        {downloadNotice && (
+          <div
+            role={downloadNotice.ok ? 'status' : 'alert'}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-xs"
+            style={{
+              backgroundColor: downloadNotice.ok ? 'var(--mc-bg-elevated)' : 'rgba(180,60,50,0.14)',
+              borderColor: downloadNotice.ok ? 'var(--mc-accent)' : '#d47c5d',
+              color: downloadNotice.ok ? 'var(--mc-text-primary)' : '#f5b482',
+            }}
+          >
+            <span>{downloadNotice.message}</span>
+            {!downloadNotice.ok && downloadNotice.targetReq && (
+              <button
+                type="button"
+                onClick={() => handleDownloadPromptTxt(downloadNotice.targetReq ?? null)}
+                className="rounded-lg border px-2.5 py-1 font-medium hover:bg-white/5"
+                style={{ borderColor: 'var(--mc-border)', color: 'var(--mc-text-primary)' }}
+              >
+                重試下載 .txt
+              </button>
+            )}
+          </div>
+        )}
+
         {activeRequest && (
           <div className="space-y-2 pt-2">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span style={{ color: 'var(--mc-text-muted)' }}>
-                Request ID：<code className="font-mono">{activeRequest.requestId}</code> · Epoch {activeRequest.baseDatasetEpoch}
-              </span>
+              <div className="flex flex-wrap items-center gap-2" style={{ color: 'var(--mc-text-muted)' }}>
+                <span>
+                  Request ID：<code className="font-mono">{activeRequest.requestId}</code>
+                </span>
+                <span>· Epoch {activeRequest.baseDatasetEpoch}</span>
+                <span>·</span>
+                <span style={{ color: activeRequest.status === 'applied' ? '#7fd1a8' : '#e6c38d' }}>
+                  {activeRequest.status === 'applied' ? '已套用' : '待回覆'}
+                </span>
+                <span className="hidden sm:inline">
+                  · 檔名：<code className="font-mono">{buildAiPromptFilename(activeRequest.task, activeRequest.requestId)}</code>
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => void handleCopyPrompt()}
-                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-3 py-1.5"
-                style={{ borderColor: 'var(--mc-border)' }}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-3 py-1.5 hover:bg-white/5"
+                style={{ borderColor: 'var(--mc-border)', color: 'var(--mc-text-secondary)' }}
               >
                 {copiedPrompt ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
-                <span>{copiedPrompt ? '已複製全部提示詞' : '複製提示詞'}</span>
+                <span>{copiedPrompt ? '已複製全部提示詞' : '複製提示詞（備用）'}</span>
               </button>
             </div>
             <textarea
               readOnly
+              aria-label="提示詞純文字預覽"
               rows={9}
               value={activeRequest.promptText}
               className="w-full rounded-xl border p-3 text-xs font-mono leading-relaxed"
@@ -450,38 +665,57 @@ export const AiWorkbenchPage: React.FC = () => {
         )}
       </section>
 
-      {/* Step 2: Paste / Import & Validate Response JSON */}
+      {/* Step 2: Import .json File (primary) / Paste fallback & Validate */}
       <section
         className="rounded-2xl border p-5 space-y-4"
         style={{ backgroundColor: 'var(--mc-bg-secondary)', borderColor: 'var(--mc-border)' }}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-semibold">步驟 2：貼回或匯入 ChatGPT JSON 回覆並驗證</h2>
+          <div>
+            <h2 className="text-base font-semibold">
+              步驟 2：匯入 ChatGPT 回覆並驗證（帶回網站：回覆 .json）
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--mc-text-muted)' }}>
+              建議直接上傳 ChatGPT 產生的 .json 檔案，可避免網頁複製時產生 HTML 編碼字元或行尾反斜線。
+            </p>
+          </div>
           <label
-            className="inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs hover:bg-white/5"
-            style={{ borderColor: 'var(--mc-border)' }}
+            className="inline-flex min-h-[42px] cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold"
+            style={{ backgroundColor: 'var(--mc-accent)', color: 'var(--mc-accent-text)' }}
           >
-            <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
+            <FileUp className="h-4 w-4" aria-hidden="true" />
             <span>匯入 .json 檔案</span>
             <input type="file" accept=".json,application/json" onChange={handleFileUpload} className="sr-only" />
           </label>
         </div>
 
-        <textarea
-          rows={8}
-          value={pasteJson}
-          onChange={(e) => {
-            setPasteJson(e.target.value);
-            setValidation(null);
-          }}
-          placeholder="將 ChatGPT Plus 回覆的純 JSON（或單層 ```json ... ``` 區塊）貼於此處…"
-          className="w-full rounded-xl border p-3 text-xs font-mono leading-relaxed"
-          style={{
-            backgroundColor: 'var(--mc-bg-primary)',
-            borderColor: 'var(--mc-border)',
-            color: 'var(--mc-text-primary)',
-          }}
-        />
+        {uploadedFileName && (
+          <p className="text-xs" style={{ color: '#7fd1a8' }}>
+            已載入回覆檔案：<code className="font-mono">{uploadedFileName}</code>（請執行下方驗證並確認套用）
+          </p>
+        )}
+
+        <label className="block space-y-1.5 text-xs">
+          <span style={{ color: 'var(--mc-text-secondary)' }}>
+            JSON 內容預覽／貼上備用區（支援純 JSON 或單層 ```json 區塊）
+          </span>
+          <textarea
+            rows={8}
+            value={pasteJson}
+            onChange={(e) => {
+              setPasteJson(e.target.value);
+              setUploadedFileName(null);
+              setValidation(null);
+            }}
+            placeholder="建議使用上方「匯入 .json 檔案」載入 ChatGPT 回覆附件；若 ChatGPT 未提供檔案下載，也可將純 JSON 貼於此處…"
+            className="w-full rounded-xl border p-3 text-xs font-mono leading-relaxed"
+            style={{
+              backgroundColor: 'var(--mc-bg-primary)',
+              borderColor: 'var(--mc-border)',
+              color: 'var(--mc-text-primary)',
+            }}
+          />
+        </label>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -563,35 +797,65 @@ export const AiWorkbenchPage: React.FC = () => {
         )}
       </section>
 
-      {/* Pending Requests History */}
-      {(snapshot?.aiRequests.length ?? 0) > 0 && (
+      {/* Independent Per-Request History */}
+      {sortedRequests.length > 0 && (
         <section
           className="rounded-2xl border p-5 space-y-3"
           style={{ backgroundColor: 'var(--mc-bg-secondary)', borderColor: 'var(--mc-border)' }}
         >
-          <h2 className="text-sm font-semibold">本機 AI 請求紀錄（供核對 requestId）</h2>
+          <div>
+            <h2 className="text-sm font-semibold">本機 AI 請求紀錄（供核對 requestId）</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--mc-text-muted)' }}>
+              各筆 Request ID 彼此獨立呈現狀態；重新下載既有請求的 .txt 檔案不會建立新請求或覆蓋其他待回覆項目。
+            </p>
+          </div>
           <div className="divide-y text-xs" style={{ borderColor: 'var(--mc-border)' }}>
-            {[...(snapshot?.aiRequests ?? [])]
-              .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-              .slice(0, 8)
-              .map((req) => (
-                <div key={req.requestId} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-                  <div>
-                    <span className="font-mono">{req.requestId.slice(0, 12)}…</span> · {req.task} ·{' '}
-                    <span style={{ color: req.status === 'applied' ? '#7fd1a8' : '#e6c38d' }}>
-                      {req.status === 'applied' ? '已套用' : '待回覆'}
-                    </span>
-                  </div>
+            {sortedRequests.map((req) => (
+              <div key={req.requestId} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono">{req.requestId.slice(0, 12)}…</span>
+                  <span style={{ color: 'var(--mc-text-secondary)' }}>
+                    · {TASK_LABELS[req.task] ?? req.task}
+                  </span>
+                  <span
+                    className="rounded-md border px-2 py-0.5 font-medium"
+                    style={{
+                      borderColor: req.status === 'applied' ? 'rgba(127,209,168,0.45)' : 'rgba(230,195,141,0.45)',
+                      color: req.status === 'applied' ? '#7fd1a8' : '#e6c38d',
+                    }}
+                  >
+                    {req.status === 'applied' ? '已套用' : '待回覆'}
+                  </span>
+                  <span style={{ color: 'var(--mc-text-muted)' }}>
+                    {new Date(req.createdAt).toLocaleString('zh-TW')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setActiveRequest(req)}
+                    onClick={() => {
+                      setTask(req.task);
+                      setFallbackActiveRequest(req);
+                      setActiveRequestId(req.requestId);
+                      setDownloadNotice(null);
+                    }}
                     className="hover:underline"
-                    style={{ color: 'var(--mc-accent)' }}
+                    style={{ color: 'var(--mc-text-secondary)' }}
                   >
                     檢視提示詞
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadPromptTxt(req)}
+                    className="inline-flex items-center gap-1 hover:underline"
+                    style={{ color: 'var(--mc-accent)' }}
+                  >
+                    <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>下載 .txt</span>
+                  </button>
                 </div>
-              ))}
+              </div>
+            ))}
           </div>
         </section>
       )}

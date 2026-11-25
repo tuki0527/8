@@ -42,6 +42,8 @@ export const StorageVersionsPage: React.FC = () => {
     syncAuth,
     handlePrimarySave,
     saveStatusMessage,
+    isSaving,
+    lastSavedAt,
   } = useStudy();
 
   const [actionMsg, setActionMsg] = useState<string | null>(null);
@@ -202,17 +204,19 @@ export const StorageVersionsPage: React.FC = () => {
             <h2 className="text-base font-semibold">本機與雲端版本狀態</h2>
             <p className="text-xs mt-0.5" style={{ color: 'var(--mc-text-muted)' }}>
               狀態：{saveStatusMessage} · Dataset ID：{snapshot?.datasetId ?? 'mooncode-primary'}
+              {lastSavedAt ? ` · 最近儲存：${new Date(lastSavedAt).toLocaleString('zh-TW')}` : ''}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              disabled={isSaving || busy}
               onClick={() => void handlePrimarySave()}
-              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold"
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50"
               style={{ backgroundColor: 'var(--mc-accent)', color: 'var(--mc-accent-text)' }}
             >
               <Save className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>立即儲存並同步</span>
+              <span>{isSaving ? '儲存中…' : '立即儲存並同步'}</span>
             </button>
             <button
               type="button"

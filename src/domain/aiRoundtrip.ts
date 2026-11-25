@@ -10,6 +10,7 @@ import {
 import { generateUuid, sha256Canonical } from './hash.ts';
 import type {
   AiRequest,
+  AiTaskType,
   AnswerRecord,
   CanonicalChapter,
   CanonicalSlide,
@@ -33,6 +34,22 @@ export function extractJsonFromPaste(rawText: string): string {
   }
   return trimmed;
 }
+
+const TASK_FILENAME_SLUGS: Record<AiTaskType, string> = {
+  generate_question_set: 'generate-question-set',
+  evaluate_short_answers: 'evaluate-short-answers',
+  rewrite_slide: 'rewrite-slide',
+};
+
+export function buildAiPromptFilename(task: AiTaskType, requestId: string): string {
+  const slug = TASK_FILENAME_SLUGS[task] ?? 'ai-request';
+  const safeId = requestId.replace(/[^a-zA-Z0-9_-]/g, '') || 'request';
+  return `mooncode-${slug}-${safeId}.txt`;
+}
+
+const JSON_ATTACHMENT_OUTPUT_RULE = `輸出格式強制規範（請務必遵守）：
+1. 請優先建立並提供可下載的純 UTF-8「.json」檔案附件（例如 mooncode-response.json），檔內必須僅含合法 JSON，不可夾帶 Markdown、HTML 編碼字元或額外解說文字。
+2. 若目前介面環境不支援產生可下載的 .json 檔案，才退回在訊息中直接輸出「可直接被 JSON.parse 解析的純原始 UTF-8 JSON」（禁止輸出 HTML 實體編碼如 &quot;、禁止將整份 JSON 再包裝成多一層字串、禁止在行尾加上多餘反斜線 \\、也不要附加前後解說文字）。`;
 
 export interface GenerateSetPromptContext {
   chapter: CanonicalChapter;
@@ -86,8 +103,12 @@ export function buildGenerateSetRequest(ctx: GenerateSetPromptContext): AiReques
   const promptText = `你是一位嚴謹的 C# 物件導向與 MVC 教學命題老師。請使用繁體中文（臺灣技術用語），根據下方資料產生一組恰好 10 題的題組：
 - 必須恰好包含 7 題 single_choice（4 個不重複選項、correctOptionIndex 為 0..3）與 3 題 short_answer（理解題，需含 requiredPoints 對應 conceptId、coreMisconceptions、acceptablePrinciples、referenceAnswer）。
 - 涵蓋本章主要概念，並加強弱點與到期複習概念，避免與近期題目重複。
-- 僅輸出純 JSON，不要附加任何 Markdown 解釋文字。若新題使用暫時 localId，匯入時會由系統指派正式 UUID；也可填寫 "questionId": "local-q1" .. "local-q10"。
-- 必須嚴格符合以下回傳信封結構：
+- 若新題使用暫時 localId，匯入時會由系統指派正式 UUID；也可填寫 "questionId": "local-q1" .. "local-q10"。
+- 不可修改外層 format、schemaVersion、task、requestId（${requestId}）與 baseDatasetEpoch（${ctx.baseDatasetEpoch}）。
+
+${JSON_ATTACHMENT_OUTPUT_RULE}
+
+必須嚴格符合以下回傳信封結構：
 {
   "format": "mooncode.ai_response",
   "schemaVersion": 1,
@@ -155,8 +176,9 @@ export function buildEvaluateShortAnswersRequest(
 1. 允許口語、不同比喻與同義表達；不可因字數短、用詞不完全相同或打字速度慢而判錯。
 2. 每個必要點輸出 met (true/false)、從學生回答中摘錄的 evidence 與理由 reason。
 3. 只有「所有必要點皆為 true 且無核心矛盾 contradictions」時 correct 才為 true；不提供模糊的半對分數。
-4. 不可修改 requestId、testRunId、answerId、questionVersion、answerHash、rubricVersion。
-5. 僅回傳純 JSON，勿加多餘說明。
+4. 不可修改 requestId（${requestId}）、baseDatasetEpoch（${baseDatasetEpoch}）、testRunId、answerId、questionVersion、answerHash、rubricVersion。
+
+${JSON_ATTACHMENT_OUTPUT_RULE}
 
 回傳格式：
 {
@@ -239,9 +261,10 @@ export function buildRewriteSlideRequest(
   const promptText = `請在不更動任何 C# 程式碼、核心定義、程式行為與學習目標的前提下，僅改寫指定簡報的可編輯欄位。
 限制：
 - 絕對不可輸出或修改 locked、definition、code、expectedBehavior、learningObjectives、rubricBasis、corePoint。
-- baseContentVersion 必須原樣維持為 ${slide.contentVersion}。
+- requestId 必須原樣維持為 "${requestId}"，baseDatasetEpoch 必須維持為 ${baseDatasetEpoch}，baseContentVersion 必須維持為 ${slide.contentVersion}。
 - layoutVariant 只允許："split_code" | "focused_concept" | "comparison_columns"。
-- 僅輸出純 JSON。
+
+${JSON_ATTACHMENT_OUTPUT_RULE}
 
 回傳格式：
 {
@@ -333,7 +356,9 @@ export async function validateAndTransformAiImport(
   } catch (err) {
     return {
       ok: false,
-      errors: [`JSON 解析失敗：${err instanceof Error ? err.message : String(err)}`],
+      errors: [
+        `JSON 解析失敗（請確認為 ChatGPT 產生的純 UTF-8 .json 檔案，未混入網頁複製造成的 &quot; HTML 編碼或行尾多餘反斜線 \\）：${err instanceof Error ? err.message : String(err)}`,
+      ],
     };
   }
 
@@ -602,7 +627,8 @@ export const MANUAL_AI_ADAPTER_STATUS: AiAdapterStatus = {
   label: 'Plus 手動 JSON 往返模式',
   mode: 'manual',
   connected: true,
-  description: '本版預設且完整可用：複製提示詞交給 ChatGPT Plus，再貼回或匯入 JSON 回覆。',
+  description:
+    '本版預設且完整可用：下載純文字提示詞（.txt）交給 ChatGPT Plus，優先取得並匯入回覆 .json 檔案（亦保留複製與貼回備用）。',
 };
 
 export const UNVERIFIED_AUTO_ADAPTER_STATUS: AiAdapterStatus = {

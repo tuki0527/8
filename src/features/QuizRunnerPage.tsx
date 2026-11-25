@@ -220,10 +220,12 @@ export const QuizRunnerPage: React.FC = () => {
         viewedHintOrAnswerBefore: false,
       });
 
+      runRef.current = updatedRun;
       await commitQuizAnswer(answerRecord, updatedRun);
       await reloadSnapshot();
 
       if (updatedRun.status === 'completed') {
+        setRun(updatedRun);
         navigate(`/quiz/${updatedRun.testRunId}/result`, { replace: true });
         return;
       }
